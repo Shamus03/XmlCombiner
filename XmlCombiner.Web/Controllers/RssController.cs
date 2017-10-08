@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace XmlCombiner.Web.Controllers
@@ -11,12 +13,12 @@ namespace XmlCombiner.Web.Controllers
     [Route("api/[controller]")]
     public class RssController : Controller
     {
-        private const string FEEDS_FILE = "feeds.json";
+        private readonly string FeedsFilename = Environment.GetEnvironmentVariable("FEEDS_JSON") ?? "feeds.json";
 
         [HttpGet("xml")]
         public FileResult GetCombinedFeedsXml()
         {
-            XDocument combinedDocument = CreateBaseDocument("Shamus' RSS feed");
+            XDocument combinedDocument = CreateBaseDocument("Combined RSS feed");
             XElement channel = combinedDocument.Element("rss").Element("channel");
 
             var feeds = LoadFeeds();
@@ -43,6 +45,15 @@ namespace XmlCombiner.Web.Controllers
             if (feedUrl == null)
             {
                 return BadRequest();
+            }
+
+            try
+            {
+                XDocument.Load(feedUrl);
+            }
+            catch (XmlException)
+            {
+                return StatusCode((int)HttpStatusCode.Conflict, "Feed url does not parse to XML");
             }
 
             Dictionary<string, string> feeds = LoadFeeds();
@@ -87,13 +98,18 @@ namespace XmlCombiner.Web.Controllers
 
             try
             {
-                using (StreamReader r = new StreamReader(FEEDS_FILE))
+                using (StreamReader r = new StreamReader(FeedsFilename))
                 {
                     string json = r.ReadToEnd();
                     feeds = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
                 }
             }
             catch (FileNotFoundException)
+            {
+                feeds = null;
+            }
+
+            if (feeds == null)
             {
                 feeds = new Dictionary<string, string>();
             }
@@ -103,7 +119,7 @@ namespace XmlCombiner.Web.Controllers
 
         private void SaveFeeds(Dictionary<string, string> feeds)
         {
-            using (StreamWriter w = new StreamWriter(FEEDS_FILE, false))
+            using (StreamWriter w = new StreamWriter(FeedsFilename, false))
             {
                 w.WriteLine(JsonConvert.SerializeObject(feeds));
             }
