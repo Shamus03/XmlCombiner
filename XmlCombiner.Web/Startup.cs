@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
+using XmlCombiner.Web.Infrastructure;
 
 namespace XmlCombiner.Web
 {
@@ -29,6 +25,17 @@ namespace XmlCombiner.Web
             {
                 c.SwaggerDoc("v1", new Info { Title = "XmlCombiner API", Version = "v1" });
             });
+
+            services.AddScoped<IFeedRepository, FeedRepository>();
+            services.AddSingleton<FeedRepositoryOptions>();
+            services.Configure<FeedRepositoryOptions>(c =>
+            {
+                string envFilePath = Environment.GetEnvironmentVariable("FEEDS_JSON");
+                if (envFilePath != null)
+                {
+                    c.FilePath = envFilePath;
+                }
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,6 +54,7 @@ namespace XmlCombiner.Web
             });
 
             app.UseMvc();
+            app.UseStaticFiles();
         }
     }
 }

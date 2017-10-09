@@ -1,0 +1,20 @@
+﻿<table>
+    <thead>
+        <tr>
+            <th>Feed Name</th>
+            <th>Additional Queries</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!--TODO: feed row template-->
+        {{#each this}}
+        {{>feedRow this}}
+        {{/each}}
+        <tr class="trNewFeed">
+            <td><input class="inputName"type="text" /></td>
+            <td><input class="inputAdditional" type="text" /></td>
+            <td><button class="btnSubmitFeed">Submit</button></td>
+        </tr>
+    </tbody>
+</table>

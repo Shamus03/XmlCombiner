@@ -8,7 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BCB24376-E6F2-461C-A2DE-31390EB5ECE6}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		.travis.yml = .travis.yml
 		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject

@@ -1,0 +1,11 @@
+﻿<tr class="trFeed">
+    <td class="tdFeedName"><a href="{{encodedFeedUrl}}"><span class="spanFeedName">{{name}}</span></a></td>
+    <td class="tdAdditional">
+        {{#each additionalParameters}}
+        <span class="spanAdditional">{{this}}</span>
+        {{/each}}
+    </td>
+    <td class="tdActions">
+        <button class="btnDelete" data-id="{{id}}">Delete</button>
+    </td>
+</tr>
