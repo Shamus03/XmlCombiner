@@ -48,13 +48,15 @@ namespace XmlCombiner.Web.Controllers
         }
 
         [HttpGet]
+        [Produces(typeof(Feed[]))]
         public IActionResult GetFeeds()
         {
             return Ok(FeedRepository.GetFeeds());
         }
 
         [HttpPost]
-        public IActionResult AddFeed([FromBody] Feed feed)
+        [Produces(typeof(Feed))]
+        public IActionResult PostFeed([FromBody] Feed feed)
         {
             ModelState.Remove(nameof(Feed.Id));
 

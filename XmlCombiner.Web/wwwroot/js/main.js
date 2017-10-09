@@ -56,7 +56,7 @@ async function loadFeeds() {
             let data = {
                 name: $('.inputName').val(),
                 baseUrl: $('#inputBaseUrl').val(),
-                additionalParameters: $('.inputAdditional').val().split(" ")
+                additionalParameters: $('.inputAdditional').val().trim().split(/\s+/)
             };
 
             let oldText = me.text();
