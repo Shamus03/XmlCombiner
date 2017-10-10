@@ -11,9 +11,9 @@ namespace XmlCombiner.Web.Infrastructure
     {
         private readonly string FilePath;
 
-        public FeedRepository(FeedRepositoryOptions options)
+        public FeedRepository()
         {
-            FilePath = options.FilePath;
+            FilePath = Environment.GetEnvironmentVariable("FEEDS_JSON") ?? "feeds.json";
         }
 
         public Feed[] GetFeeds()

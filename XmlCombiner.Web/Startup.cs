@@ -27,15 +27,6 @@ namespace XmlCombiner.Web
             });
 
             services.AddScoped<IFeedRepository, FeedRepository>();
-            services.AddSingleton<FeedRepositoryOptions>();
-            services.Configure<FeedRepositoryOptions>(c =>
-            {
-                string envFilePath = Environment.GetEnvironmentVariable("FEEDS_JSON");
-                if (envFilePath != null)
-                {
-                    c.FilePath = envFilePath;
-                }
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
