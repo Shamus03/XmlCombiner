@@ -23,7 +23,7 @@ async function registerPartial(partialName) {
 function setupInputBaseUrl() {
     let cookieName = "baseUrl";
     $('#inputBaseUrl').val($.cookie(cookieName));
-    $('#inputBaseUrl').change(e => $.cookie(cookieName, $(e.target).val()));
+    $('#inputBaseUrl').change(e => $.cookie(cookieName, $(e.target).val(), { expires: new Date(99999999999999) }));
 }
 
 async function loadFeeds() {
