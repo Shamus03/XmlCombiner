@@ -1,11 +1,11 @@
 ﻿$(() => onDocumentLoad());
 
 async function onDocumentLoad() {
+    setupInputBaseUrl();
+
     await registerPartials();
 
     loadFeeds();
-
-    setupInputBaseUrl();
 }
 
 async function registerPartials() {
