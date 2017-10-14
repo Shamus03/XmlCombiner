@@ -1,11 +1,13 @@
 ﻿<tr class="trFeed">
-    <td class="tdFeedName"><a href="{{encodedFeedUrl}}"><span class="spanFeedName">{{name}}</span></a></td>
+    <td class="tdFeedName"><a class="btn btn-primary" href="{{encodedFeedUrl}}">{{name}}</a></td>
     <td class="tdAdditional">
-        {{#each additionalParameters}}
-        <span class="spanAdditional">{{this}}</span>
-        {{/each}}
+        <span class="input-group">
+            {{#each additionalParameters}}
+            <span class="spanAdditional input-group-addon">{{this}}</span>
+            {{/each}}
+        </span>
     </td>
     <td class="tdActions">
-        <button class="btnDelete" data-id="{{id}}">Delete</button>
+        <button class="btnDelete btn btn-danger" data-id="{{id}}">Delete</button>
     </td>
 </tr>

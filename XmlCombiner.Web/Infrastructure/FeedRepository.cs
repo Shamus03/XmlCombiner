@@ -62,11 +62,7 @@ namespace XmlCombiner.Web.Infrastructure
                     feeds = JsonConvert.DeserializeObject<ICollection<Feed>>(json);
                 }
             }
-            catch (JsonSerializationException)
-            {
-                feeds = null;
-            }
-            catch (FileNotFoundException)
+            catch (Exception e) when (e is JsonSerializationException || e is FileNotFoundException)
             {
                 feeds = null;
             }

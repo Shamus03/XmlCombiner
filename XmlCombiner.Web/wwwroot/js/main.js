@@ -28,49 +28,61 @@ function setupInputBaseUrl() {
 
 async function loadFeeds() {
     let template = Handlebars.partials['feedsTable'];
-    let html = template(await $.getJSON("/api/feeds"));
+    let data = await $.getJSON("/api/feeds");
+    let html = template(data);
     $('#divFeeds').html(html);
 
     setupDeleteButtons();
     setupSubmitNewButton();
 
     function setupDeleteButtons() {
-        $('body').on('click', '.btnDelete', async e => {
+        $('body').on('click', '.btnDelete:not(.disabled)', async e => {
             e.preventDefault();
             let me = $(e.target);
             let id = me.data("id");
-            me.text('Deleting...').prop('disabled', true);
+            me.text('Deleting...').addClass('disabled');
             await $.delete(`/api/feeds/${id}`);
             me.closest('.trFeed').remove();
         });
     }
 
     function setupSubmitNewButton() {
-        $('.btnSubmitFeed').click(async e => {
+        $('body').on('keyup', '#divNewFeed', e => {
+            if (e.keyCode === 13) {
+                $('#btnSubmitFeed').click();
+            }
+        });
+        $('body').on('click', '#btnSubmitFeed:not(.disabled)', async e => {
             e.preventDefault();
             let me = $(e.target);
-            let newFeedRow = $('.trNewFeed');
-            let name = $('.inputName').val();
-            let additional = $('.inputAdditional').val().split(" ");
 
             let data = {
-                name: $('.inputName').val(),
+                name: $('#inputName').val(),
                 baseUrl: $('#inputBaseUrl').val(),
-                additionalParameters: $('.inputAdditional').val().trim().split(/\s+/)
+                additionalParameters: $('#inputAdditional').val().trim().split(/\s+/).filter(v => v)
             };
 
             let oldText = me.text();
-            me.text('Loading...').prop('disabled', true);
+            me.text('Loading...').addClass('disabled');
             try {
                 let newFeed = await $.post('/api/feeds', data);
 
-                newFeedRow.find('input').val('');
+                $('#inputName').val('');
+                $('#inputAdditional').val('');
 
                 let newRow = Handlebars.partials['feedRow'](newFeed);
-                $(newRow).insertBefore(newFeedRow);
+                $(newRow).appendTo($('.tbodyFeeds'));
+            }
+            catch (e) {
+                if (e.responseJSON) {
+                    alert(JSON.stringify(e.responseJSON, null, ' '));
+                }
+                else {
+                    alert(e.responseText);
+                }
             }
             finally {
-                me.text(oldText).prop('disabled', false);
+                me.text(oldText).removeClass('disabled');
             }
         });
     }

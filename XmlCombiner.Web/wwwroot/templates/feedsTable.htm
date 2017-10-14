@@ -1,19 +1,14 @@
-﻿<table>
-    <thead>
+﻿<table class="table table-bordered table-sm">
+    <thead class="thead-default">
         <tr>
             <th>Feed Name</th>
             <th>Additional Queries</th>
             <th>Actions</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody class="tbodyFeeds">
         {{#each this}}
         {{>feedRow this}}
         {{/each}}
-        <tr class="trNewFeed">
-            <td><input class="inputName"type="text" /></td>
-            <td><input class="inputAdditional" type="text" /></td>
-            <td><button class="btnSubmitFeed">Submit</button></td>
-        </tr>
     </tbody>
 </table>

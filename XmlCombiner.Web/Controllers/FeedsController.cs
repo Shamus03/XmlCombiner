@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Xml;
@@ -69,9 +71,13 @@ namespace XmlCombiner.Web.Controllers
             {
                 XDocument.Load(feed.EncodedFeedUrl);
             }
+            catch(Exception e) when (e is IOException || e is WebException)
+            {
+                return BadRequest("Feed could not be loaded");
+            }
             catch (XmlException)
             {
-                return StatusCode((int)HttpStatusCode.Conflict, "Feed url does not parse to XML");
+                return BadRequest("Feed url does not parse to XML");
             }
 
             feed.Id = Guid.NewGuid().ToString();
