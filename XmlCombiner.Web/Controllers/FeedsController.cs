@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using XmlCombiner.Web.Domain;
@@ -38,12 +41,16 @@ namespace XmlCombiner.Web.Controllers
             channel.Add(channelTitle);
 
             Feed[] feeds = FeedRepository.GetFeeds();
-            foreach (Feed feed in feeds)
-            {
-                var feedDocument = XDocument.Load(feed.EncodedFeedUrl);
-                var items = feedDocument.Root.Element("channel").Elements("item");
-                channel.Add(items);
-            }
+            var itemsTasks = feeds.Select(feed =>
+                Task.Factory.StartNew(() =>
+                {
+                    var feedDocument = XDocument.Load(feed.EncodedFeedUrl);
+                    var items = feedDocument.Root.Element("channel").Elements("item");
+                    return items;
+                })).ToArray();
+
+            Task.WaitAll(itemsTasks);
+            channel.Add(itemsTasks.Select(t => t.Result));
 
             byte[] fileContent = Encoding.UTF8.GetBytes(document.ToString());
             return File(fileContent, "application/xml");
