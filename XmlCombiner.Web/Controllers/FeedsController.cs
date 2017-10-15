@@ -41,16 +41,12 @@ namespace XmlCombiner.Web.Controllers
             channel.Add(channelTitle);
 
             Feed[] feeds = FeedRepository.GetFeeds();
-            var itemsTasks = feeds.Select(feed =>
-                Task.Factory.StartNew(() =>
-                {
-                    var feedDocument = XDocument.Load(feed.EncodedFeedUrl);
-                    var items = feedDocument.Root.Element("channel").Elements("item");
-                    return items;
-                })).ToArray();
-
-            Task.WaitAll(itemsTasks);
-            channel.Add(itemsTasks.Select(t => t.Result));
+            foreach (Feed feed in feeds)
+            {
+                var feedDocument = XDocument.Load(feed.EncodedFeedUrl);
+                var items = feedDocument.Root.Element("channel").Elements("item");
+                channel.Add(items);
+            }
 
             byte[] fileContent = Encoding.UTF8.GetBytes(document.ToString());
             return File(fileContent, "application/xml");
