@@ -1,0 +1,10 @@
+.git
+.dockerignore
+.gitignore
+Dockerfile*
+packages
+.vs
+*.bat
+**/*.user
+**/obj
+**/bin

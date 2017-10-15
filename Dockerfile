@@ -1,9 +1,12 @@
 FROM microsoft/aspnetcore-build:2 as publish
 
-COPY . /src
-WORKDIR /src/XmlCombiner.Web
-RUN dotnet restore
-RUN dotnet publish -c Release -o /publish
+WORKDIR /src
+COPY **/*.csproj ./
+RUN ls *.csproj | xargs -n1 dotnet restore
+RUN rm -f *.csproj
+
+COPY . .
+RUN dotnet publish -c Release -o /publish XmlCombiner.Web
 
 FROM microsoft/aspnetcore:2
 
