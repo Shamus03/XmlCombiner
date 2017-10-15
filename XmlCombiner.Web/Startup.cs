@@ -45,6 +45,7 @@ namespace XmlCombiner.Web
             });
 
             app.UseMvc();
+            app.UseDefaultFiles();
             app.UseStaticFiles();
         }
     }

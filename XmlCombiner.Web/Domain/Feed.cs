@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web;
+using System.Linq;
+
 
 namespace XmlCombiner.Web.Domain
 {
@@ -16,7 +18,7 @@ namespace XmlCombiner.Web.Domain
 
         public ICollection<string> AdditionalParameters { get; }
 
-        public string EncodedFeedUrl => BaseUrl + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters)} {Name}");
+        public string EncodedFeedUrl => BaseUrl + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters.Concat(new[] {Name}))}");
 
         public Feed(string baseUrl, string name)
         {
