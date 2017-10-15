@@ -3,13 +3,21 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using XmlCombiner.Web.Domain;
 
 namespace XmlCombiner.Web.Infrastructure
 {
     public class FeedRepository : IFeedRepository
     {
+        private static ReaderWriterLock FileLock;
+
         private readonly string FilePath;
+
+        static FeedRepository()
+        {
+            FileLock = new ReaderWriterLock();
+        }
 
         public FeedRepository()
         {
@@ -18,37 +26,62 @@ namespace XmlCombiner.Web.Infrastructure
 
         public Feed[] GetFeeds()
         {
-            return LoadFeeds().ToArray();
+            FileLock.AcquireReaderLock(1000);
+            try
+            {
+                var feeds = LoadFeeds();
+                return feeds.ToArray();
+            }
+            finally
+            {
+                FileLock.ReleaseReaderLock();
+            }
         }
 
         public bool AddFeed(Feed feed)
         {
-            ICollection<Feed> feeds = LoadFeeds();
-            Feed found = feeds.FirstOrDefault(f => f.Id == feed.Id);
-
-            if (found != null)
+            FileLock.AcquireWriterLock(1000);
+            try
             {
-                return false;
-            }
+                ICollection<Feed> feeds = LoadFeeds();
+                Feed found = feeds.FirstOrDefault(f => f.Id == feed.Id);
 
-            feeds.Add(feed);
-            SaveFeeds(feeds);
-            return true;
+                if (found != null)
+                {
+                    return false;
+                }
+
+                feeds.Add(feed);
+                SaveFeeds(feeds);
+                return true;
+            }
+            finally
+            {
+                FileLock.ReleaseWriterLock();
+            }
         }
 
         public bool DeleteFeed(string id)
         {
-            ICollection<Feed> feeds = LoadFeeds();
-            Feed found = feeds.FirstOrDefault(f => f.Id == id);
-
-            if (found == null)
+            FileLock.AcquireWriterLock(1000);
+            try
             {
-                return false;
-            }
+                ICollection<Feed> feeds = LoadFeeds();
+                Feed found = feeds.FirstOrDefault(f => f.Id == id);
 
-            feeds.Remove(found);
-            SaveFeeds(feeds);
-            return true;
+                if (found == null)
+                {
+                    return false;
+                }
+
+                feeds.Remove(found);
+                SaveFeeds(feeds);
+                return true;
+            }
+            finally
+            {
+                FileLock.ReleaseWriterLock();
+            }
         }
 
         private ICollection<Feed> LoadFeeds()
