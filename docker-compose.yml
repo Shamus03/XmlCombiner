@@ -1,0 +1,11 @@
+version: '2'
+services:
+  web:
+    image: shamus03/xmlcombiner
+    build: .
+    ports:
+      - "8001:80"
+    volumes:
+      - /config/xmlcombiner:/config
+    environment:
+      - FEEDS_JSON=/config/feeds.json
