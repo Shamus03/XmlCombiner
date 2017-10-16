@@ -1,9 +1,13 @@
 ﻿#divContent {
-    padding-top: 20px;
+    margin-top: 1rem;
+    margin-bottom: 2rem;
 }
 
-#divNewFeed {
-    padding-top: 20px;
+#btnSubmitFeed {
+    margin-top: 1rem;
+}
+
+#divNewFeed > div > div {
 }
 
 .centered {
