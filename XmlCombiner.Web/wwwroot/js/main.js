@@ -5,7 +5,13 @@ async function onDocumentLoad() {
 
     await registerPartials();
 
-    loadFeeds();
+    if (new URLSearchParams(location.search).get('deleted') !== 'true')
+    {
+        loadFeeds();
+    }
+    else {
+        loadDeletedFeeds();
+    }
 }
 
 async function registerPartials() {
@@ -84,6 +90,27 @@ async function loadFeeds() {
             finally {
                 me.text(oldText).removeClass('disabled');
             }
+        });
+    }
+}
+
+async function loadDeletedFeeds() {
+    $('#divNewFeed').hide();
+    let template = Handlebars.partials['feedsTable'];
+    let data = await $.getJSON("/api/feeds/deleted");
+    let html = template(data);
+    $('#divFeeds').html(html);
+
+    setupUneleteButtons();
+
+    function setupUneleteButtons() {
+        $('body').on('click', '.btnUndelete:not(.disabled)', async e => {
+            e.preventDefault();
+            let me = $(e.target);
+            let id = me.data("id");
+            me.text('Undeleting...').addClass('disabled');
+            await $.post(`/api/feeds/${id}/undelete`);
+            me.closest('.trFeed').remove();
         });
     }
 }

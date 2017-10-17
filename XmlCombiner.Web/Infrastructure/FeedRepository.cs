@@ -24,12 +24,12 @@ namespace XmlCombiner.Web.Infrastructure
             FilePath = Environment.GetEnvironmentVariable("FEEDS_JSON") ?? "feeds.json";
         }
 
-        public Feed[] GetFeeds()
+        public Feed[] GetFeeds(bool deleted = false)
         {
             FileLock.AcquireReaderLock(1000);
             try
             {
-                var feeds = LoadFeeds();
+                var feeds = LoadFeeds().Where(f => f.Deleted == deleted);
                 return feeds.ToArray();
             }
             finally
@@ -40,7 +40,7 @@ namespace XmlCombiner.Web.Infrastructure
 
         public bool AddFeed(Feed feed)
         {
-            FileLock.AcquireWriterLock(1000);
+            FileLock.AcquireReaderLock(1000);
             try
             {
                 ICollection<Feed> feeds = LoadFeeds();
@@ -51,30 +51,9 @@ namespace XmlCombiner.Web.Infrastructure
                     return false;
                 }
 
+                FileLock.UpgradeToWriterLock(1000);
+
                 feeds.Add(feed);
-                SaveFeeds(feeds);
-                return true;
-            }
-            finally
-            {
-                FileLock.ReleaseWriterLock();
-            }
-        }
-
-        public bool DeleteFeed(string id)
-        {
-            FileLock.AcquireWriterLock(1000);
-            try
-            {
-                ICollection<Feed> feeds = LoadFeeds();
-                Feed found = feeds.FirstOrDefault(f => f.Id == id);
-
-                if (found == null)
-                {
-                    return false;
-                }
-
-                feeds.Remove(found);
                 SaveFeeds(feeds);
                 return true;
             }
@@ -113,6 +92,42 @@ namespace XmlCombiner.Web.Infrastructure
             using (StreamWriter w = new StreamWriter(FilePath, false))
             {
                 w.WriteLine(JsonConvert.SerializeObject(feeds));
+            }
+        }
+
+        public bool DeleteFeed(string id)
+        {
+            return SetFeedDeleted(id, true) != null;
+        }
+
+        public Feed UndeleteFeed(string id)
+        {
+            return SetFeedDeleted(id, false);
+        }
+
+        private Feed SetFeedDeleted(string id, bool deleted)
+        {
+
+            FileLock.AcquireReaderLock(1000);
+            try
+            {
+                ICollection<Feed> feeds = LoadFeeds();
+                Feed found = feeds.FirstOrDefault(f => f.Id == id);
+
+                if (found == null)
+                {
+                    return null;
+                }
+
+                FileLock.UpgradeToWriterLock(1000);
+
+                found.Deleted = deleted;
+                SaveFeeds(feeds);
+                return found;
+            }
+            finally
+            {
+                FileLock.ReleaseWriterLock();
             }
         }
     }

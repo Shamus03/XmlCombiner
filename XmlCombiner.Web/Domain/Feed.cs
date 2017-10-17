@@ -16,6 +16,8 @@ namespace XmlCombiner.Web.Domain
         [Required]
         public string Name { get; set; }
 
+        public bool Deleted { get; set; }
+
         public ICollection<string> AdditionalParameters { get; }
 
         public string EncodedFeedUrl => BaseUrl + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters.Concat(new[] {Name}))}");
@@ -24,6 +26,7 @@ namespace XmlCombiner.Web.Domain
         {
             this.BaseUrl = baseUrl;
             this.Name = name;
+            this.Deleted = false;
             this.AdditionalParameters = new HashSet<string>();
         }
     }
