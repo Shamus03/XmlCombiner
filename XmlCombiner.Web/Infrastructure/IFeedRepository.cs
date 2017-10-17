@@ -6,6 +6,7 @@ namespace XmlCombiner.Web.Infrastructure
     {
         bool AddFeed(Feed feed);
         bool DeleteFeed(string id);
-        Feed[] GetFeeds();
+        Feed[] GetFeeds(bool deleted = false);
+        Feed UndeleteFeed(string id);
     }
 }

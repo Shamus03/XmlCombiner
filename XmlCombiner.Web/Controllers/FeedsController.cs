@@ -59,6 +59,13 @@ namespace XmlCombiner.Web.Controllers
             return Ok(FeedRepository.GetFeeds());
         }
 
+        [HttpGet("deleted")]
+        [Produces(typeof(Feed[]))]
+        public IActionResult GetDeletedFeeds()
+        {
+            return Ok(FeedRepository.GetFeeds(deleted: true));
+        }
+
         [HttpPost]
         [Produces(typeof(Feed))]
         public IActionResult PostFeed([FromBody] Feed feed)
@@ -95,6 +102,20 @@ namespace XmlCombiner.Web.Controllers
             if (FeedRepository.DeleteFeed(id))
             {
                 return NoContent();
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost("{id}/undelete")]
+        public IActionResult UndeleteFeed([FromRoute] string id)
+        {
+            var feed = FeedRepository.UndeleteFeed(id);
+            if (feed != null)
+            {
+                return Ok(feed);
             }
             else
             {
