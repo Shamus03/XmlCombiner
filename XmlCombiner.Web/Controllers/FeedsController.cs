@@ -43,7 +43,7 @@ namespace XmlCombiner.Web.Controllers
             Feed[] feeds = FeedRepository.GetFeeds();
             foreach (Feed feed in feeds)
             {
-                var feedDocument = XDocument.Load(feed.EncodedFeedUrl);
+                var feedDocument = XDocument.Load(feed.RssPageUrl);
                 var items = feedDocument.Root.Element("channel").Elements("item");
                 channel.Add(items);
             }
@@ -77,9 +77,13 @@ namespace XmlCombiner.Web.Controllers
                 return BadRequest(ModelState);
             }
 
+            feed.BaseUrl = feed.BaseUrl.Trim();
+            feed.Name = feed.Name.Trim();
+            feed.AdditionalParameters = feed.AdditionalParameters.Select(p => p.Trim()).ToArray();
+
             try
             {
-                XDocument.Load(feed.EncodedFeedUrl);
+                XDocument.Load(feed.RssPageUrl);
             }
             catch(Exception e) when (e is IOException || e is WebException)
             {
@@ -100,6 +104,19 @@ namespace XmlCombiner.Web.Controllers
         public IActionResult DeleteFeed([FromRoute] string id)
         {
             if (FeedRepository.DeleteFeed(id))
+            {
+                return NoContent();
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost("{id}/deleteforever")]
+        public IActionResult DeleteFeedForever([FromRoute] string id)
+        {
+            if (FeedRepository.DeleteFeedForever(id))
             {
                 return NoContent();
             }

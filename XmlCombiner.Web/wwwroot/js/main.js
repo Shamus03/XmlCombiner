@@ -1,17 +1,32 @@
 ﻿$(() => onDocumentLoad());
 
 async function onDocumentLoad() {
+    setupNavigation();
+
     setupInputBaseUrl();
 
     await registerPartials();
 
-    if (new URLSearchParams(location.search).get('deleted') !== 'true')
-    {
-        loadFeeds();
-    }
-    else {
+    directAppContent();
+}
+
+function directAppContent() {
+    if (window.location.hash === '#deleted') {
         loadDeletedFeeds();
     }
+    else {
+        loadFeeds();
+    }
+}
+
+function setupNavigation() {
+    $('#navFeeds').click(e => {
+        loadFeeds();
+    });
+    $('#navDeleted').click(e => {
+        loadDeletedFeeds();
+    });
+
 }
 
 async function registerPartials() {
@@ -32,7 +47,15 @@ function setupInputBaseUrl() {
     $('#inputBaseUrl').change(e => $.cookie(cookieName, $(e.target).val(), { expires: new Date(99999999999999) }));
 }
 
+function setActiveNav(selector) {
+    $('.nav-link').removeClass('active');
+    $(selector).addClass('active');
+}
+
 async function loadFeeds() {
+    setActiveNav('#navFeeds');
+    $('#divNewFeed').show();
+    $('#hTitle').text('Active Feeds');
     let template = Handlebars.partials['feedsTable'];
     let data = await $.getJSON("/api/feeds");
     let html = template(data);
@@ -95,13 +118,16 @@ async function loadFeeds() {
 }
 
 async function loadDeletedFeeds() {
+    setActiveNav('#navDeleted');
     $('#divNewFeed').hide();
+    $('#hTitle').text('Deleted Feeds');
     let template = Handlebars.partials['feedsTable'];
     let data = await $.getJSON("/api/feeds/deleted");
     let html = template(data);
     $('#divFeeds').html(html);
 
     setupUneleteButtons();
+    setupDeleteForeverButtons();
 
     function setupUneleteButtons() {
         $('body').on('click', '.btnUndelete:not(.disabled)', async e => {
@@ -110,6 +136,17 @@ async function loadDeletedFeeds() {
             let id = me.data("id");
             me.text('Undeleting...').addClass('disabled');
             await $.post(`/api/feeds/${id}/undelete`);
+            me.closest('.trFeed').remove();
+        });
+    }
+
+    function setupDeleteForeverButtons() {
+        $('body').on('click', '.btnDeleteForever:not(.disabled)', async e => {
+            e.preventDefault();
+            let me = $(e.target);
+            let id = me.data("id");
+            me.text('Deleting forever...').addClass('disabled');
+            await $.post(`/api/feeds/${id}/deleteforever`);
             me.closest('.trFeed').remove();
         });
     }

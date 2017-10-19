@@ -8,5 +8,6 @@ namespace XmlCombiner.Web.Infrastructure
         bool DeleteFeed(string id);
         Feed[] GetFeeds(bool deleted = false);
         Feed UndeleteFeed(string id);
+        bool DeleteFeedForever(string id);
     }
 }

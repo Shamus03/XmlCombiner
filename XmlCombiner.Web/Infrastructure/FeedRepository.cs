@@ -91,7 +91,7 @@ namespace XmlCombiner.Web.Infrastructure
         {
             using (StreamWriter w = new StreamWriter(FilePath, false))
             {
-                w.WriteLine(JsonConvert.SerializeObject(feeds));
+                w.WriteLine(JsonConvert.SerializeObject(feeds, new JsonSerializerSettings { ContractResolver = new ExcludeDerivedPropertiesResolver()}));
             }
         }
 
@@ -124,6 +124,31 @@ namespace XmlCombiner.Web.Infrastructure
                 found.Deleted = deleted;
                 SaveFeeds(feeds);
                 return found;
+            }
+            finally
+            {
+                FileLock.ReleaseWriterLock();
+            }
+        }
+
+        public bool DeleteFeedForever(string id)
+        {
+            FileLock.AcquireReaderLock(1000);
+            try
+            {
+                ICollection<Feed> feeds = LoadFeeds();
+                Feed found = feeds.FirstOrDefault(f => f.Id == id);
+
+                if (found == null)
+                {
+                    return false;
+                }
+
+                FileLock.UpgradeToWriterLock(1000);
+
+                feeds.Remove(found);
+                SaveFeeds(feeds);
+                return true;
             }
             finally
             {

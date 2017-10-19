@@ -8,7 +8,19 @@
     <link href="css/main.css" rel="stylesheet" />
 </head>
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">RSS Feeds</a>
+        <div class="navbar-nav mr-auto">
+            <a id="navFeeds" class="nav-item nav-link" href="#feeds">Feeds</a>
+            <a id="navDeleted" class="nav-item nav-link" href="#deleted">Deleted</a>
+            <a class="nav-item nav-link" href="api/feeds/xml">Xml</a>
+        </div>
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" style="float:right;" href="swagger">API</a>
+        </div>
+    </nav>
     <div id="divContent" class="container">
+        <h3 id="hTitle"></h3>
         <div id="divFeeds" class="row"><div class="loader centered"></div></div>
 
         <div id="divNewFeed" class="row" >

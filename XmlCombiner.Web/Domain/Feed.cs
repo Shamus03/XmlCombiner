@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Web;
 using System.Linq;
-
+using Newtonsoft.Json;
 
 namespace XmlCombiner.Web.Domain
 {
@@ -18,9 +18,11 @@ namespace XmlCombiner.Web.Domain
 
         public bool Deleted { get; set; }
 
-        public ICollection<string> AdditionalParameters { get; }
+        public ICollection<string> AdditionalParameters { get; set; }
 
-        public string EncodedFeedUrl => BaseUrl + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters.Concat(new[] {Name}))}");
+        public string SearchPageUrl => BaseUrl + "&q=" + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters.Concat(new[] { Name }))}");
+
+        public string RssPageUrl => SearchPageUrl + "&page=rss";
 
         public Feed(string baseUrl, string name)
         {
