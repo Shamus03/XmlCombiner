@@ -19,9 +19,10 @@ namespace XmlCombiner.Web
         public static void Main(string[] args)
         {
             var host = BuildWebHost(args);
+
             bool migrated = false;
             int attempts = 0;
-            while (!migrated && attempts < 5)
+            while (!migrated)
             {
                 try
                 {
@@ -33,7 +34,7 @@ namespace XmlCombiner.Web
                         migrated = true;
                     }
                 }
-                catch (Exception)
+                catch (Exception) when (attempts < 5)
                 {
                     Thread.Sleep(TimeSpan.FromSeconds(5));
                     attempts += 1;
