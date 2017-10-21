@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using XmlCombiner.Web.Controllers.Requests;
 using XmlCombiner.Web.Domain;
 using XmlCombiner.Web.Infrastructure;
 
@@ -17,11 +19,11 @@ namespace XmlCombiner.Web.Controllers
     [Route("api/[controller]")]
     public class FeedsController : Controller
     {
-        private readonly IFeedRepository FeedRepository;
+        private readonly XmlCombinerContext Context;
 
-        public FeedsController(IFeedRepository feedRepository)
+        public FeedsController(XmlCombinerContext context)
         {
-            FeedRepository = feedRepository;
+            Context = context;
         }
 
         [HttpGet("xml")]
@@ -40,7 +42,7 @@ namespace XmlCombiner.Web.Controllers
             };
             channel.Add(channelTitle);
 
-            Feed[] feeds = FeedRepository.GetFeeds();
+            var feeds = Context.Feeds.Include(f => f.AdditionalParameters).Where(f => f.Hidden == false);
             foreach (Feed feed in feeds)
             {
                 var feedDocument = XDocument.Load(feed.RssPageUrl);
@@ -56,36 +58,42 @@ namespace XmlCombiner.Web.Controllers
         [Produces(typeof(Feed[]))]
         public IActionResult GetFeeds()
         {
-            return Ok(FeedRepository.GetFeeds());
+            return Ok(Context.Feeds.Include(f => f.AdditionalParameters).Where(f => f.Hidden == false));
         }
 
-        [HttpGet("deleted")]
+        [HttpGet("hidden")]
         [Produces(typeof(Feed[]))]
-        public IActionResult GetDeletedFeeds()
+        public IActionResult GetHiddenFeeds()
         {
-            return Ok(FeedRepository.GetFeeds(deleted: true));
+            return Ok(Context.Feeds.Include(f => f.AdditionalParameters).Where(f => f.Hidden == true));
         }
 
         [HttpPost]
         [Produces(typeof(Feed))]
-        public IActionResult PostFeed([FromBody] Feed feed)
+        public async Task<IActionResult> PostFeed([FromBody] FeedPostRequest request)
         {
-            ModelState.Remove(nameof(Feed.Id));
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            feed.BaseUrl = feed.BaseUrl.Trim();
-            feed.Name = feed.Name.Trim();
-            feed.AdditionalParameters = feed.AdditionalParameters.Select(p => p.Trim()).ToArray();
+            var feed = new Feed
+            {
+                Name = request.Name.Trim(),
+                BaseUrl = request.BaseUrl.Trim(),
+                AdditionalParameters = request.AdditionalParameters.Select(p =>
+                    new AdditionalParameter
+                    {
+                        Parameter = p.Parameter.Trim()
+                    }
+                ).ToList()
+            };
 
             try
             {
                 XDocument.Load(feed.RssPageUrl);
             }
-            catch(Exception e) when (e is IOException || e is WebException)
+            catch (Exception e) when (e is IOException || e is WebException)
             {
                 return BadRequest("Feed could not be loaded");
             }
@@ -94,44 +102,47 @@ namespace XmlCombiner.Web.Controllers
                 return BadRequest("Feed url does not parse to XML");
             }
 
-            feed.Id = Guid.NewGuid().ToString();
-            FeedRepository.AddFeed(feed);
+            Context.Feeds.Add(feed);
+            await Context.SaveChangesAsync();
 
-            return Created($"api/rss/{feed.Id}", feed);
+            return Created($"api/feed/{feed.Id}", feed);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteFeed([FromRoute] string id)
+        public async Task<IActionResult> DeleteFeed([FromRoute] string id)
         {
-            if (FeedRepository.DeleteFeed(id))
-            {
-                return NoContent();
-            }
-            else
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPost("{id}/deleteforever")]
-        public IActionResult DeleteFeedForever([FromRoute] string id)
-        {
-            if (FeedRepository.DeleteFeedForever(id))
-            {
-                return NoContent();
-            }
-            else
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPost("{id}/undelete")]
-        public IActionResult UndeleteFeed([FromRoute] string id)
-        {
-            var feed = FeedRepository.UndeleteFeed(id);
+            var feed = await Context.Feeds.FindAsync(id);
             if (feed != null)
             {
+                Context.Feeds.Remove(feed);
+                await Context.SaveChangesAsync();
+                return NoContent();
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost("{id}/hide")]
+        public async Task<IActionResult> HideFeed([FromRoute] string id)
+        {
+            return await SetFeedHidden(id, true);
+        }
+
+        [HttpPost("{id}/unhide")]
+        public async Task<IActionResult> UnhideFeed([FromRoute] string id)
+        {
+            return await SetFeedHidden(id, false);
+        }
+
+        private async Task<IActionResult> SetFeedHidden(string id, bool hidden)
+        {
+            var feed = await Context.Feeds.Include(f => f.AdditionalParameters).FirstOrDefaultAsync(f => f.Id == id);
+            if (feed != null)
+            {
+                feed.Hidden = hidden;
+                await Context.SaveChangesAsync();
                 return Ok(feed);
             }
             else

@@ -3,6 +3,8 @@
 async function onDocumentLoad() {
     setupNavigation();
 
+    setUpButtons();
+
     setupInputBaseUrl();
 
     await registerPartials();
@@ -11,8 +13,8 @@ async function onDocumentLoad() {
 }
 
 function directAppContent() {
-    if (window.location.hash === '#deleted') {
-        loadDeletedFeeds();
+    if (window.location.hash === '#hidden') {
+        loadHiddenFeeds();
     }
     else {
         loadFeeds();
@@ -23,10 +25,14 @@ function setupNavigation() {
     $('#navFeeds').click(e => {
         loadFeeds();
     });
-    $('#navDeleted').click(e => {
-        loadDeletedFeeds();
+    $('#navHidden').click(e => {
+        loadHiddenFeeds();
     });
 
+}
+
+function showLoader() {
+    $('#divFeeds').html('<div class="loader centered"></div>');
 }
 
 async function registerPartials() {
@@ -53,103 +59,116 @@ function setActiveNav(selector) {
 }
 
 async function loadFeeds() {
+    showLoader();
     setActiveNav('#navFeeds');
     $('#divNewFeed').show();
     $('#hTitle').text('Active Feeds');
     let template = Handlebars.partials['feedsTable'];
-    let data = await $.getJSON("/api/feeds");
-    let html = template(data);
-    $('#divFeeds').html(html);
-
-    setupDeleteButtons();
-    setupSubmitNewButton();
-
-    function setupDeleteButtons() {
-        $('body').on('click', '.btnDelete:not(.disabled)', async e => {
-            e.preventDefault();
-            let me = $(e.target);
-            let id = me.data("id");
-            me.text('Deleting...').addClass('disabled');
-            await $.delete(`/api/feeds/${id}`);
-            me.closest('.trFeed').remove();
-        });
+    try {
+        let data = await $.getJSON("/api/feeds");
+        let html = template(data);
+        $('#divFeeds').html(html);
     }
-
-    function setupSubmitNewButton() {
-        $('body').on('keyup', '#divNewFeed', e => {
-            if (e.keyCode === 13) {
-                $('#btnSubmitFeed').click();
-            }
-        });
-        $('body').on('click', '#btnSubmitFeed:not(.disabled)', async e => {
-            e.preventDefault();
-            let me = $(e.target);
-
-            let data = {
-                name: $('#inputName').val(),
-                baseUrl: $('#inputBaseUrl').val(),
-                additionalParameters: $('#inputAdditional').val().trim().split(/\s+/).filter(v => v)
-            };
-
-            let oldText = me.text();
-            me.text('Loading...').addClass('disabled');
-            try {
-                let newFeed = await $.post('/api/feeds', data);
-
-                $('#inputName').val('');
-                $('#inputAdditional').val('');
-
-                let newRow = Handlebars.partials['feedRow'](newFeed);
-                $(newRow).appendTo($('.tbodyFeeds'));
-            }
-            catch (e) {
-                if (e.responseJSON) {
-                    alert(JSON.stringify(e.responseJSON, null, ' '));
-                }
-                else {
-                    alert(e.responseText);
-                }
-            }
-            finally {
-                me.text(oldText).removeClass('disabled');
-            }
-        });
+    catch (e) {
+        $('#divFeeds').text('Error loading feeds');
     }
 }
 
-async function loadDeletedFeeds() {
-    setActiveNav('#navDeleted');
+async function loadHiddenFeeds() {
+    showLoader();
+    setActiveNav('#navHidden');
     $('#divNewFeed').hide();
-    $('#hTitle').text('Deleted Feeds');
+    $('#hTitle').text('Hidden Feeds');
     let template = Handlebars.partials['feedsTable'];
-    let data = await $.getJSON("/api/feeds/deleted");
-    let html = template(data);
-    $('#divFeeds').html(html);
-
-    setupUneleteButtons();
-    setupDeleteForeverButtons();
-
-    function setupUneleteButtons() {
-        $('body').on('click', '.btnUndelete:not(.disabled)', async e => {
-            e.preventDefault();
-            let me = $(e.target);
-            let id = me.data("id");
-            me.text('Undeleting...').addClass('disabled');
-            await $.post(`/api/feeds/${id}/undelete`);
-            me.closest('.trFeed').remove();
-        });
+    try {
+        let data = await $.getJSON("/api/feeds/hidden");
+        let html = template(data);
+        $('#divFeeds').html(html);
     }
-
-    function setupDeleteForeverButtons() {
-        $('body').on('click', '.btnDeleteForever:not(.disabled)', async e => {
-            e.preventDefault();
-            let me = $(e.target);
-            let id = me.data("id");
-            me.text('Deleting forever...').addClass('disabled');
-            await $.post(`/api/feeds/${id}/deleteforever`);
-            me.closest('.trFeed').remove();
-        });
+    catch (e) {
+        $('#divFeeds').text('Error loading feeds');
     }
+}
+
+function setUpButtons() {
+    setupSubmitNewButton();
+    setupDeleteButtons();
+    setUpHideButtons();
+    setUpUnhideButtons();
+}
+
+function setupSubmitNewButton() {
+    $('body').on('keyup', '#divNewFeed', e => {
+        if (e.keyCode === 13) {
+            $('#btnSubmitFeed').click();
+        }
+    });
+    $('body').on('click', '#btnSubmitFeed:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target);
+
+        let data = {
+            name: $('#inputName').val(),
+            baseUrl: $('#inputBaseUrl').val(),
+            additionalParameters: $('#inputAdditional').val().trim().split(/\s+/).filter(p => p).map(p => { return { parameter: p }; })
+        };
+
+        let oldText = me.text();
+        me.text('Loading...').addClass('disabled');
+        try {
+            let newFeed = await $.post('/api/feeds', data);
+
+            $('#inputName').val('');
+            $('#inputAdditional').val('');
+
+            let newRow = Handlebars.partials['feedRow'](newFeed);
+            $(newRow).appendTo($('.tbodyFeeds'));
+        }
+        catch (e) {
+            if (e.responseJSON) {
+                alert(JSON.stringify(e.responseJSON, null, ' '));
+            }
+            else {
+                alert(e.responseText);
+            }
+        }
+        finally {
+            me.text(oldText).removeClass('disabled');
+        }
+    });
+}
+
+function setupDeleteButtons() {
+    $('body').on('click', '.btnDelete:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target);
+        let id = me.data("id");
+        me.text('Deleting...').addClass('disabled');
+        await $.delete(`/api/feeds/${id}`);
+        me.closest('.trFeed').remove();
+    });
+}
+
+function setUpHideButtons() {
+    $('body').on('click', '.btnHide:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target);
+        let id = me.data("id");
+        me.text('Unhiding...').addClass('disabled');
+        await $.post(`/api/feeds/${id}/hide`);
+        me.closest('.trFeed').remove();
+    });
+}
+
+function setUpUnhideButtons() {
+    $('body').on('click', '.btnUnhide:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target);
+        let id = me.data("id");
+        me.text('Unhiding...').addClass('disabled');
+        await $.post(`/api/feeds/${id}/unhide`);
+        me.closest('.trFeed').remove();
+    });
 }
 
 $(() => {
