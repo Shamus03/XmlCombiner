@@ -5,7 +5,13 @@ services:
     build: .
     ports:
       - "8001:80"
-    volumes:
-      - /config/xmlcombiner:/config
+    depends_on:
+      - db
+
+  db:
+    image: mysql
     environment:
-      - FEEDS_JSON=/config/feeds.json
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_DATABASE: xmlcombiner
+      MYSQL_USER: exampleuser
+      MYSQL_PASSWORD: examplepassword
