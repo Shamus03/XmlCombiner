@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using XmlCombiner.Web.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace XmlCombiner.Web
 {
@@ -18,12 +19,25 @@ namespace XmlCombiner.Web
         public static void Main(string[] args)
         {
             var host = BuildWebHost(args);
-
-            using (var scope = host.Services.CreateScope())
+            bool migrated = false;
+            int attempts = 0;
+            while (!migrated && attempts < 5)
             {
-                var ctx = scope.ServiceProvider.GetRequiredService<XmlCombinerContext>();
-                ctx.Database.EnsureCreated();
-                ctx.Database.Migrate();
+                try
+                {
+                    using (var scope = host.Services.CreateScope())
+                    {
+                        var ctx = scope.ServiceProvider.GetRequiredService<XmlCombinerContext>();
+                        ctx.Database.EnsureCreated();
+                        ctx.Database.Migrate();
+                        migrated = true;
+                    }
+                }
+                catch (Exception)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                    attempts += 1;
+                }
             }
 
             host.Run();

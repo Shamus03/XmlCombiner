@@ -1,9 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using XmlCombiner.Web.Domain;
 
 namespace XmlCombiner.Web.Infrastructure
@@ -21,7 +16,8 @@ namespace XmlCombiner.Web.Infrastructure
             modelBuilder.Entity<Feed>(feed =>
             {
                 feed.HasMany(f => f.AdditionalParameters)
-                    .WithOne();
+                    .WithOne()
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

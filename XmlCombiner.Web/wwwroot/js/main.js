@@ -125,12 +125,7 @@ function setupSubmitNewButton() {
             $(newRow).appendTo($('.tbodyFeeds'));
         }
         catch (e) {
-            if (e.responseJSON) {
-                alert(JSON.stringify(e.responseJSON, null, ' '));
-            }
-            else {
-                alert(e.responseText);
-            }
+            alertError(e);
         }
         finally {
             me.text(oldText).removeClass('disabled');
@@ -144,9 +139,23 @@ function setupDeleteButtons() {
         let me = $(e.target);
         let id = me.data("id");
         me.text('Deleting...').addClass('disabled');
-        await $.delete(`/api/feeds/${id}`);
-        me.closest('.trFeed').remove();
+        try {
+            await $.delete(`/api/feeds/${id}`);
+            me.closest('.trFeed').remove();
+        }
+        catch (e) {
+            alertError(e);
+        }
     });
+}
+
+function alertError(e) {
+    if (e.responseJSON) {
+        alert(JSON.stringify(e.responseJSON, null, ' '));
+    }
+    else {
+        alert(e.responseText);
+    }
 }
 
 function setUpHideButtons() {
@@ -155,8 +164,13 @@ function setUpHideButtons() {
         let me = $(e.target);
         let id = me.data("id");
         me.text('Unhiding...').addClass('disabled');
-        await $.post(`/api/feeds/${id}/hide`);
-        me.closest('.trFeed').remove();
+        try {
+            await $.post(`/api/feeds/${id}/hide`);
+            me.closest('.trFeed').remove();
+        }
+        catch (e) {
+            alertError(e);
+        }
     });
 }
 
@@ -166,8 +180,13 @@ function setUpUnhideButtons() {
         let me = $(e.target);
         let id = me.data("id");
         me.text('Unhiding...').addClass('disabled');
-        await $.post(`/api/feeds/${id}/unhide`);
-        me.closest('.trFeed').remove();
+        try {
+            await $.post(`/api/feeds/${id}/unhide`);
+            me.closest('.trFeed').remove();
+        }
+        catch (e) {
+            alertError(e);
+        }
     });
 }
 
