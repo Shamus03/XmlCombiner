@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
 using XmlCombiner.Web.Infrastructure;
 
@@ -26,7 +27,7 @@ namespace XmlCombiner.Web
                 c.SwaggerDoc("v1", new Info { Title = "XmlCombiner API", Version = "v1" });
             });
 
-            services.AddScoped<IFeedRepository, FeedRepository>();
+            services.AddDbContext<XmlCombinerContext>(options => options.UseMySql(Configuration.GetConnectionString(nameof(XmlCombinerContext))));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -7,6 +7,9 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+using XmlCombiner.Web.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace XmlCombiner.Web
 {
@@ -14,7 +17,16 @@ namespace XmlCombiner.Web
     {
         public static void Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            var host = BuildWebHost(args);
+
+            using (var scope = host.Services.CreateScope())
+            {
+                var ctx = scope.ServiceProvider.GetRequiredService<XmlCombinerContext>();
+                ctx.Database.EnsureCreated();
+                ctx.Database.Migrate();
+            }
+
+            host.Run();
         }
 
         public static IWebHost BuildWebHost(string[] args) =>

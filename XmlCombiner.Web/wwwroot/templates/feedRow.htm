@@ -3,16 +3,16 @@
     <td class="tdAdditional">
         <span class="input-group">
             {{#each additionalParameters}}
-            <span class="spanAdditional input-group-addon">{{this}}</span>
+            <span class="spanAdditional input-group-addon">{{this.parameter}}</span>
             {{/each}}
         </span>
     </td>
     <td class="tdActions">
-        {{#if deleted}}
-        <button class="btnUndelete btn btn-warning" data-id="{{id}}">Undelete</button>
-        <button class="btnDeleteForever btn btn-danger" data-id="{{id}}">Delete Forever</button>
+        {{#if hidden}}
+        <button class="btnUnhide btn btn-warning" data-id="{{id}}">Unhide</button>
         {{else}}
-        <button class="btnDelete btn btn-danger" data-id="{{id}}">Delete</button>
+        <button class="btnHide btn btn-warning" data-id="{{id}}">Hide</button>
         {{/if}}
+        <button class="btnDelete btn btn-danger" data-id="{{id}}">Delete</button>
     </td>
 </tr>
