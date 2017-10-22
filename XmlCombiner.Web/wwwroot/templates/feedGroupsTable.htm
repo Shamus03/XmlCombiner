@@ -1,0 +1,19 @@
+﻿<table class="table table-bordered table-sm">
+    <thead class="thead-default">
+        <tr>
+            <th>Group</th>
+            <th>Base Url</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each this}}
+        {{>feedGroupRow this}}
+        {{/each}}
+        <tr class="trNewFeedGroup">
+            <td><input class="inputNewFeedGroupDescription form-control" /></td>
+            <td><input class="inputNewFeedGroupBaseUrl form-control" /></td>
+            <td><button class="btnSubmitNewFeedGroup btn btn-success">Create</button></td>
+        </tr>
+    </tbody>
+</table>

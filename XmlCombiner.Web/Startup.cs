@@ -1,9 +1,8 @@
-﻿using System;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
 using XmlCombiner.Web.Infrastructure;
 
@@ -28,6 +27,8 @@ namespace XmlCombiner.Web
             });
 
             services.AddDbContext<XmlCombinerContext>(options => options.UseMySql(Configuration.GetConnectionString(nameof(XmlCombinerContext))));
+            services.AddTransient<IFeedGroupRepository, FeedGroupRepository>();
+            services.AddTransient<IFeedRepository, FeedRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

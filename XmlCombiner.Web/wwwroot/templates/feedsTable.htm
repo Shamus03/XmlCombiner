@@ -6,9 +6,19 @@
             <th>Actions</th>
         </tr>
     </thead>
-    <tbody class="tbodyFeeds">
-        {{#each this}}
+    <tbody>
+        {{#each feeds}}
         {{>feedRow this}}
         {{/each}}
+        <tr class="trNewFeed">
+            <td><input class="inputNewFeedName form-control" /></td>
+            <td><input class="inputNewFeedAdditional form-control" /></td>
+            <td><button class="btnSubmitFeed btn btn-success">Submit</button></td>
+        </tr>
     </tbody>
 </table>
+
+<div class="input-group">
+    <span class="input-group-addon">Base Url</span>
+    <input class="inputNewFeedBaseUrl form-control" type="text" value="{{baseUrl}}" />
+</div>

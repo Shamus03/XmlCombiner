@@ -11,9 +11,8 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="#">RSS Feeds</a>
         <div class="navbar-nav mr-auto">
-            <a id="navFeeds" class="nav-item nav-link" href="#feeds">Feeds</a>
-            <a id="navHidden" class="nav-item nav-link" href="#hidden">Hidden</a>
-            <a class="nav-item nav-link" href="api/feeds/xml">Xml</a>
+            <a id="navFeedGroups" class="nav-item nav-link" href="#feedgroups">Feed Groups</a>
+            <a id="navXml" class="nav-item nav-link" href="api/feeds/xml">Xml</a>
         </div>
         <div class="navbar-nav">
             <a class="nav-item nav-link" style="float:right;" href="swagger">API</a>
@@ -21,25 +20,7 @@
     </nav>
     <div id="divContent" class="container">
         <h3 id="hTitle"></h3>
-        <div id="divFeeds" class="row"></div>
-
-        <div id="divNewFeed" class="row" >
-            <div class="col">
-                <div class="input-group">
-                    <span class="input-group-addon">Base Url</span>
-                    <input id="inputBaseUrl" class="form-control" type="text" />
-                </div>
-                <div class="input-group">
-                    <span class="input-group-addon">Feed Name</span>
-                    <input id="inputName" class="form-control" type="text" />
-                </div>
-                <div class="input-group">
-                    <span class="input-group-addon">Additional Queries</span>
-                    <input id="inputAdditional" class="form-control" type="text" />
-                </div>
-                <button id="btnSubmitFeed" class="btn btn-success float-right">Submit</button>
-            </div>
-        </div>
+        <div id="divPartialContent" class="row"></div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>

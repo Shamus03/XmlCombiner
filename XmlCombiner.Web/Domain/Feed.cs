@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Web;
 using System.Linq;
-using Newtonsoft.Json;
+using System.Web;
 
 namespace XmlCombiner.Web.Domain
 {
@@ -14,8 +12,6 @@ namespace XmlCombiner.Web.Domain
 
         public string Name { get; set; }
 
-        public bool Hidden { get; set; }
-
         public ICollection<AdditionalParameter> AdditionalParameters { get; set; }
 
         public string SearchPageUrl => BaseUrl + "&q=" + HttpUtility.UrlEncode($"{string.Join(" ", AdditionalParameters.Select(p => p.Parameter).Concat(new[] { Name }))}");
@@ -24,6 +20,7 @@ namespace XmlCombiner.Web.Domain
 
         public Feed()
         {
+            AdditionalParameters = new HashSet<AdditionalParameter>();
         }
     }
 }
