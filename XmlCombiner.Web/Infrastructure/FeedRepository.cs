@@ -30,12 +30,13 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<Feed[]> GetAllActiveFeedsAsync()
         {
-            return await (from feedGroup in Context.FeedGroups
-                                                   .Include(g => g.Feeds)
-                                                   .ThenInclude(f => f.AdditionalParameters)
-                          where !feedGroup.Hidden
-                          from feed in feedGroup.Feeds
-                          select feed).ToArrayAsync();
+            var feedGroups = await (from feedGroup in Context.FeedGroups
+                                                             .Include(g => g.Feeds)
+                                                             .ThenInclude(f => f.AdditionalParameters)
+                                    where !feedGroup.Hidden
+                                    select feedGroup).ToArrayAsync();
+
+            return feedGroups.SelectMany(g => g.Feeds).ToArray();
         }
     }
 }
