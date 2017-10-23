@@ -10,12 +10,14 @@ namespace XmlCombiner.Web
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IHostingEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IHostingEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -26,7 +28,14 @@ namespace XmlCombiner.Web
                 c.SwaggerDoc("v1", new Info { Title = "XmlCombiner API", Version = "v1" });
             });
 
-            services.AddDbContext<XmlCombinerContext>(options => options.UseMySql(Configuration.GetConnectionString(nameof(XmlCombinerContext))));
+            if (Environment.IsDevelopment())
+            {
+                services.AddDbContext<XmlCombinerContext>(options => options.UseInMemoryDatabase(nameof(XmlCombinerContext)));
+            }
+            else
+            {
+                services.AddDbContext<XmlCombinerContext>(options => options.UseMySql(Configuration.GetConnectionString(nameof(XmlCombinerContext))));
+            }
             services.AddTransient<IFeedGroupRepository, FeedGroupRepository>();
             services.AddTransient<IFeedRepository, FeedRepository>();
         }

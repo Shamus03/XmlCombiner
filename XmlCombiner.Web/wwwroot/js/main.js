@@ -1,13 +1,13 @@
-﻿$(() => onDocumentLoad());
+﻿'option strict';
+
+$(() => onDocumentLoad());
 
 async function onDocumentLoad() {
+    bindInputValueToCookie('.inputNewFeedGroupBaseUrl', 'baseUrl');
+
     await registerPartials();
 
     directAppContent();
-}
-
-function showLoader() {
-    $('#divPartialContent').html('<div class="loader centered"></div>');
 }
 
 async function directAppContent() {
@@ -30,24 +30,7 @@ async function directAppContent() {
     }
 }
 
-async function registerPartials() {
-    await $.when(
-        registerPartial('feedGroupsTable'),
-        registerPartial('feedGroupRow'),
-        registerPartial('feedsTable'),
-        registerPartial('feedRow')
-    );
-
-    async function registerPartial(partialName) {
-        let partial = await $.get(`/templates/${partialName}.htm`);
-        Handlebars.registerPartial(partialName, Handlebars.compile(partial));
-    }
-}
-
-function setActiveNav(selector) {
-    $('.nav-link').removeClass('active');
-    $(selector).addClass('active');
-}
+// PAGE LOADING
 
 async function loadFeedGroupPageAsync(id) {
     showLoader();
@@ -68,32 +51,18 @@ async function loadFeedGroupsPageAsync() {
     let data = await $.getJSON('/api/feedgroups');
     let html = template(data);
     $('#divPartialContent').html(html);
-    $('.inputNewFeedGroupBaseUrl').val($.cookie('baseUrl'));
 }
 
-async function loadFeeds() {
-    showLoader();
-    setActiveNav('#navFeeds');
-    $('#hTitle').text('Active Feeds');
-    let template = Handlebars.partials['feedsTable'];
-    try {
-        let data = await $.getJSON("/api/feeds");
-        let html = template(data);
-        $('#divPartialContent').html(html);
-    }
-    catch (e) {
-        $('#divPartialContent').text('Error loading feeds');
-    }
-}
+// NAVIGATION AND EVENTS
 
-$(function setupNavigation() {
+$(function windowOnHashChange() {
     window.onhashchange = e => {
         setTimeout(directAppContent, 50);
     };
 });
 
-$(function setupHideFeedGroupButton() {
-    $('body').on('click', '.btnHideFeedGroup', async e => {
+$(function onBtnHideFeedGroupClick() {
+    $('body').on('click', '.btnHideFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
 
         let me = $(e.target);
@@ -101,8 +70,8 @@ $(function setupHideFeedGroupButton() {
         let originalText = me.text();
         me.text('Hiding...').addClass('disabled');
         try {
-            await $.put(`/api/feedgroups/${id}/hide`);
             me.text('Hiding...').addClass('disabled');
+            await $.put(`/api/feedgroups/${id}/hide`);
             $(`.btnUnhideFeedGroup[data-id=${id}]`).show();
             $(`.btnHideFeedGroup[data-id=${id}]`).hide();
         }
@@ -110,13 +79,13 @@ $(function setupHideFeedGroupButton() {
             alertError(e);
         }
         finally {
-            me.text(originalText);
+            me.text(originalText).removeClass('disabled');
         }
     });
 });
 
-$(function setupUnhideFeedGroupButton() {
-    $('body').on('click', '.btnUnhideFeedGroup', async e => {
+$(function onBtnUnhideFeedGroupClick() {
+    $('body').on('click', '.btnUnhideFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
 
         let me = $(e.target);
@@ -124,8 +93,8 @@ $(function setupUnhideFeedGroupButton() {
         let originalText = me.text();
         me.text('Hiding...').addClass('disabled');
         try {
-            await $.put(`/api/feedgroups/${id}/unhide`);
             me.text('Unhiding...').addClass('disabled');
+            await $.put(`/api/feedgroups/${id}/unhide`);
             $(`.btnUnhideFeedGroup[data-id=${id}]`).hide();
             $(`.btnHideFeedGroup[data-id=${id}]`).show();
         }
@@ -133,12 +102,12 @@ $(function setupUnhideFeedGroupButton() {
             alertError(e);
         }
         finally {
-            me.text(originalText);
+            me.text(originalText).removeClass('disabled');
         }
     });
 });
 
-$(function setupSubmitNewFeedGroupButton() {
+$(function onBtnSubmitNewFeedGroupClick() {
     let handler = e => {
         if (e.keyCode === 13) {
             $('.btnSubmitNewFeedGroup').click();
@@ -172,7 +141,7 @@ $(function setupSubmitNewFeedGroupButton() {
     });
 });
 
-$(function setupSubmitNewFeedButton() {
+$(function onBtnSubmitFeedClick() {
     let keyUpHandler = e => {
         if (e.keyCode === 13) {
             $('.btnSubmitFeed').click();
@@ -213,15 +182,22 @@ $(function setupSubmitNewFeedButton() {
     });
 });
 
-$(function setupDeleteFeedButtons() {
+$(function onBtnDeleteFeedClick() {
     $('body').on('click', '.btnDeleteFeed:not(.disabled)', async e => {
         e.preventDefault();
         let me = $(e.target);
+        let row = me.closest('.trFeed');
+        let name = row.find('.btnFeedLink').text();
+
+        if (!confirm(`Delete "${name}"?`)) {
+            return;
+        }
+
         let id = me.data("id");
         me.text('Deleting...').addClass('disabled');
         try {
             await $.delete(`/api/feeds/${id}`);
-            me.closest('.trFeed').remove();
+            row.remove();
         }
         catch (e) {
             alertError(e);
@@ -229,21 +205,53 @@ $(function setupDeleteFeedButtons() {
     });
 });
 
-$(function setupDeleteFeedGroupButtons() {
+$(function onBtnDeleteFeedGroupClick() {
     $('body').on('click', '.btnDeleteFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
         let me = $(e.target);
+        let row = me.closest('.trFeedGroup');
+        let name = row.find('.btnFeedGroupLink').text();
+
+        if (!confirm(`Delete "${name}"?`)) {
+            return;
+        }
+
         let id = me.data("id");
         me.text('Deleting...').addClass('disabled');
         try {
             await $.delete(`/api/feedgroups/${id}`);
-            me.closest('.trFeedGroup').remove();
+            row.remove();
         }
         catch (e) {
             alertError(e);
         }
     });
 });
+
+// HELPERS
+
+async function registerPartials() {
+    await $.when(
+        registerPartial('feedGroupsTable'),
+        registerPartial('feedGroupRow'),
+        registerPartial('feedsTable'),
+        registerPartial('feedRow')
+    );
+
+    async function registerPartial(partialName) {
+        let partial = await $.get(`/templates/${partialName}.htm`);
+        Handlebars.registerPartial(partialName, Handlebars.compile(partial));
+    }
+}
+
+function showLoader() {
+    $('#divPartialContent').html('<div class="loader centered"></div>');
+}
+
+function setActiveNav(selector) {
+    $('.nav-link').removeClass('active');
+    $(selector).addClass('active');
+}
 
 function alertError(e) {
     if (e.responseJSON) {
@@ -267,9 +275,24 @@ function getHashQueryParameter(key) {
         .filter(kvp => kvp[0] === key)[0][1];
 }
 
-$(function setupInputNewFeedGroupBaseUrl() {
-    $('.inputNewFeedGroupBaseUrl').change(e => $.cookie('baseUrl', $(e.target).val(), { expires: new Date(99999999999999) }));
-});
+function bindInputValueToCookie(selector, cookieName) {
+    saveInputValueInCookie(selector, cookieName);
+    loadInputValueFromCookie(selector, cookieName);
+
+    function loadInputValueFromCookie(selector, cookieName) {
+        let element = $(selector);
+        if (element.length) {
+            element.val($.cookie(cookieName));
+        }
+        else {
+            setTimeout(() => loadInputValueFromCookie(selector, cookieName), 100);
+        }
+    }
+
+    function saveInputValueInCookie(selector, cookieName) {
+        $('body').on('change', selector, e => $.cookie(cookieName, $(e.target).val(), { expires: new Date(99999999999999) }));
+    }
+}
 
 $(() => {
     $.post = function (url, data) {

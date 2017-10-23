@@ -16,7 +16,8 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<bool> AddFeedToGroupAsync(string feedGroupId, Feed feed)
         {
-            var feedGroup = await Context.FeedGroups.FindAsync(feedGroupId);
+            var feedGroup = await Context.FeedGroups
+                .FindAsync(feedGroupId);
 
             if (feedGroup is null)
             {
@@ -30,13 +31,14 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<FeedGroup[]> GetFeedGroupsAsync()
         {
-            return await (from feedGroup in Context.FeedGroups
-                          select feedGroup).ToArrayAsync();
+            return await Context.FeedGroups
+                .ToArrayAsync();
         }
 
         public async Task<bool> DeleteFeedGroupAsync(string id)
         {
-            var feedGroup = await Context.FeedGroups.FindAsync(id);
+            var feedGroup = await Context.FeedGroups
+                .FindAsync(id);
 
             if (feedGroup is null)
             {
@@ -50,16 +52,17 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<FeedGroup> GetFeedGroupAsync(string id)
         {
-            return await (from feedGroup in Context.FeedGroups
-                                                   .Include(g => g.Feeds)
-                                                   .ThenInclude(f => f.AdditionalParameters)
-                          where feedGroup.Id == id
-                          select feedGroup).FirstOrDefaultAsync();
+            return await Context.FeedGroups
+                .Where(g => g.Id == id)
+                .Include(g => g.Feeds)
+                .ThenInclude(f => f.AdditionalParameters)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<bool> SetFeedGroupHiddenAsync(string id, bool hidden)
         {
-            var feedGroup = await Context.FeedGroups.FindAsync(id);
+            var feedGroup = await Context.FeedGroups
+                .FindAsync(id);
 
             if (feedGroup is null)
             {

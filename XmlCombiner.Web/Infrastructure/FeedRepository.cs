@@ -16,7 +16,8 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<bool> DeleteFeedAsync(string id)
         {
-            var feed = await Context.Feeds.FindAsync(id);
+            var feed = await Context.Feeds
+                .FindAsync(id);
 
             if (feed is null)
             {
@@ -30,11 +31,11 @@ namespace XmlCombiner.Web.Infrastructure
 
         public async Task<Feed[]> GetAllActiveFeedsAsync()
         {
-            var feedGroups = await (from feedGroup in Context.FeedGroups
-                                                             .Include(g => g.Feeds)
-                                                             .ThenInclude(f => f.AdditionalParameters)
-                                    where !feedGroup.Hidden
-                                    select feedGroup).ToArrayAsync();
+            var feedGroups = await Context.FeedGroups
+                .Where(g => !g.Hidden)
+                .Include(g => g.Feeds)
+                .ThenInclude(f => f.AdditionalParameters)
+                .ToArrayAsync();
 
             return feedGroups.SelectMany(g => g.Feeds).ToArray();
         }
