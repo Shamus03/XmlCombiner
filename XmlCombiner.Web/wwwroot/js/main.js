@@ -3,8 +3,6 @@
 $(() => onDocumentLoad());
 
 async function onDocumentLoad() {
-    bindInputValueToCookie('.inputNewFeedGroupBaseUrl', 'baseUrl');
-
     await registerPartials();
 
     directAppContent();
@@ -167,9 +165,6 @@ $(function onBtnSubmitFeedClick() {
             let id = getHashQueryParameter('id');
             let newFeed = await $.post(`/api/feedgroups/${id}/feeds`, data);
 
-            $('.inputNewFeedName').val('');
-            $('.inputNewFeedAdditional').val('');
-
             let newRow = Handlebars.partials['feedRow'](newFeed);
             $(newRow).insertBefore($('.trNewFeed'));
         }
@@ -273,25 +268,6 @@ function getHashQueryParameter(key) {
     return window.location.hash.split('?')[1].split('&')
         .map(kvp => kvp.split('='))
         .filter(kvp => kvp[0] === key)[0][1];
-}
-
-function bindInputValueToCookie(selector, cookieName) {
-    saveInputValueInCookie(selector, cookieName);
-    loadInputValueFromCookie(selector, cookieName);
-
-    function loadInputValueFromCookie(selector, cookieName) {
-        let element = $(selector);
-        if (element.length) {
-            element.val($.cookie(cookieName));
-        }
-        else {
-            setTimeout(() => loadInputValueFromCookie(selector, cookieName), 100);
-        }
-    }
-
-    function saveInputValueInCookie(selector, cookieName) {
-        $('body').on('change', selector, e => $.cookie(cookieName, $(e.target).val(), { expires: new Date(99999999999999) }));
-    }
 }
 
 $(() => {
