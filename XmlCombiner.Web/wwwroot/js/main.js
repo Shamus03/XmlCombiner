@@ -117,9 +117,8 @@ $(function onBtnSubmitNewFeedGroupClick() {
             description: $('.inputNewFeedGroupDescription').val(),
             baseUrl: $('.inputNewFeedGroupBaseUrl').val()
         };
-
-        let oldText = me.text();
-        me.text('Loading...').addClass('disabled');
+        
+        me.addClass('disabled');
         try {
             let newFeedGroup = await $.post('/api/feedgroups', data);
 
@@ -130,7 +129,7 @@ $(function onBtnSubmitNewFeedGroupClick() {
             alertError(e);
         }
         finally {
-            me.text(oldText).removeClass('disabled');
+            me.removeClass('disabled');
         }
     });
 });
@@ -141,7 +140,6 @@ $(function onBtnSubmitFeedClick() {
             $('.btnSubmitFeed').click();
         }
     };
-    $('body').on('keyup', '.inputNewFeedBaseUrl', keyUpHandler);
     $('body').on('keyup', '.inputNewFeedName', keyUpHandler);
     $('body').on('keyup', '.inputNewFeedAdditional', keyUpHandler);
 
@@ -154,9 +152,8 @@ $(function onBtnSubmitFeedClick() {
             baseUrl: $('.inputNewFeedBaseUrl').val(),
             additionalParameters: $('.inputNewFeedAdditional').val().trim().split(/\s+/).filter(p => p).map(p => { return { parameter: p }; })
         };
-
-        let oldText = me.text();
-        me.text('Loading...').addClass('disabled');
+        
+        me.addClass('disabled');
         try {
             let id = getHashQueryParameter('id');
             let newFeed = await $.post(`/api/feedgroups/${id}/feeds`, data);
@@ -168,7 +165,7 @@ $(function onBtnSubmitFeedClick() {
             alertError(e);
         }
         finally {
-            me.text(oldText).removeClass('disabled');
+            me.removeClass('disabled');
         }
     });
 });
@@ -252,14 +249,14 @@ $(function onBtnRenameFeedGroupClick() {
 
         let newDescription = prompt('Enter the new description for this feed:', originalDescription);
 
-        if (newDescription == null || newDescription == "") {
+        if (newDescription === null || newDescription === "") {
             return;
         }
 
         me.addClass('disabled');
 
         try {
-            await $.put(`/api/feedgroups/${id}/description`, { description: newDescription });
+            await $.patch(`/api/feedgroups/${id}`, { description: newDescription });
 
             feedGroupLink.text(newDescription);
         }
@@ -271,6 +268,51 @@ $(function onBtnRenameFeedGroupClick() {
         }
     });
 });
+
+$(function onBtnNewFeedBaseUrlSubmitClick() {
+    let keyUpHandler = e => {
+        let input = $('.inputNewFeedBaseUrl');
+
+        let originalVal = input.attr('value');
+        let newVal = input.val();
+
+        if (originalVal !== newVal) {
+            input.addClass('dirty');
+        }
+        else {
+            input.removeClass('dirty');
+        }
+
+        if (e.keyCode === 13) {
+            $('.btnNewFeedBaseUrlSubmit').click();
+        }
+    };
+    $('body').on('keyup', '.inputNewFeedBaseUrl', keyUpHandler);
+
+    $('body').on('click', '.btnNewFeedBaseUrlSubmit:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target).closest('[data-id]');
+        let id = me.data("id");
+
+        let input = $('.inputNewFeedBaseUrl');
+
+        let newUrl = input.val();
+
+        me.addClass('disabled');
+        try {
+            await $.patch(`/api/feedgroups/${id}`, { baseUrl: newUrl });
+            input.removeClass('dirty');
+            input.attr('value', newUrl);
+        }
+        catch (e) {
+            alertError(e);
+        }
+        finally {
+            me.removeClass('disabled');
+        }
+    });
+});
+
 // HELPERS
 
 async function registerPartials() {
@@ -331,6 +373,15 @@ $(() => {
     $.put = function (url, data) {
         return $.ajax({
             method: "PUT",
+            contentType: "application/json",
+            url: url,
+            data: JSON.stringify(data)
+        });
+    };
+
+    $.patch = function (url, data) {
+        return $.ajax({
+            method: "PATCH",
             contentType: "application/json",
             url: url,
             data: JSON.stringify(data)

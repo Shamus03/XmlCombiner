@@ -24,6 +24,10 @@
     display: none;
 }
 
+.dirty {
+    background:#fff200 !important;
+}
+
 @keyframes spin {
     0% {
         transform: rotate(0deg);

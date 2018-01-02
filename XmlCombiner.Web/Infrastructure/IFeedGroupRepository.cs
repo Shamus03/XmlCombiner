@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using XmlCombiner.Web.Domain;
 
@@ -12,6 +13,6 @@ namespace XmlCombiner.Web.Infrastructure
         Task<FeedGroup> GetFeedGroupAsync(string id);
         Task<bool> SetFeedGroupHiddenAsync(string id, bool hidden);
         Task AddFeedGroupAsync(FeedGroup feedGroup);
-        Task<bool> UpdateFeedGroupDescriptionAsync(string feedGroupId, string description);
+        Task<bool> UpdateFeedGroupAsync(string feedGroupId, Action<FeedGroup> action);
     }
 }

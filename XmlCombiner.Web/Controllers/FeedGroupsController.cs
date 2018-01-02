@@ -127,12 +127,34 @@ namespace XmlCombiner.Web.Controllers
             }
         }
 
-        [HttpPut("{feedGroupId}/description")]
+        [HttpPatch("{feedGroupId}")]
         public async Task<IActionResult> UpdateFeedGroupDescription([FromRoute] string feedGroupId, [FromBody] JObject body)
         {
-            if (!body.TryGetValue("description", out JToken description) || description.Type != JTokenType.String)
+            string updatedDescription = null;
+            string updatedBaseUrl = null;
+
+            if (body.TryGetValue("description", out JToken descriptionToken))
             {
-                ModelState.AddModelError("description", "description (string) is required");
+                if (descriptionToken.Type != JTokenType.String)
+                {
+                    ModelState.AddModelError("description", "description must be a string");
+                }
+                else
+                {
+                    updatedDescription = descriptionToken.Value<string>();
+                }
+            }
+
+            if (body.TryGetValue("baseUrl", out JToken baseUrlToken))
+            {
+                if (baseUrlToken.Type != JTokenType.String)
+                {
+                    ModelState.AddModelError("baseUrl", "baseUrl must be a string");
+                }
+                else
+                {
+                    updatedBaseUrl = baseUrlToken.Value<string>();
+                }
             }
 
             if (!ModelState.IsValid)
@@ -140,10 +162,23 @@ namespace XmlCombiner.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!await FeedGroupRepository.UpdateFeedGroupDescriptionAsync(feedGroupId, description.Value<string>()))
+            bool updated = await FeedGroupRepository.UpdateFeedGroupAsync(feedGroupId, fg =>
+            {
+                if (updatedDescription != null)
+                {
+                    fg.Description = updatedDescription;
+                }
+
+                if (updatedBaseUrl != null)
+                {
+                    fg.BaseUrl = updatedBaseUrl;
+                }
+            });
+
+            if (!updated)
             {
                 return NotFound();
-            };
+            }
 
             return Ok();
         }

@@ -71,9 +71,9 @@ namespace XmlCombiner.Web.Infrastructure
             await Context.SaveChangesAsync();
         }
 
-        public Task<bool> UpdateFeedGroupDescriptionAsync(string id, string description)
+        public Task<bool> UpdateFeedGroupAsync(string id, Action<FeedGroup> action)
         {
-            return ActionOnFeedGroupAsync(id, fg => fg.Description = description);
+            return ActionOnFeedGroupAsync(id, action);
         }
 
         private async Task<bool> ActionOnFeedGroupAsync(string id, Action<FeedGroup> action)

@@ -13,7 +13,7 @@
         <tr class="trNewFeed">
             <td><input class="inputNewFeedName form-control" /></td>
             <td><input class="inputNewFeedAdditional form-control" /></td>
-            <td><button class="btnSubmitFeed btn btn-success">Submit</button></td>
+            <td><button class="btnSubmitFeed btn btn-success"><span class="octicon octicon-check"></span></button></td>
         </tr>
     </tbody>
 </table>
@@ -21,4 +21,5 @@
 <div class="input-group">
     <span class="input-group-addon">Base Url</span>
     <input class="inputNewFeedBaseUrl form-control" type="text" value="{{baseUrl}}" />
+    <button class="btnNewFeedBaseUrlSubmit btn btn-success" data-id="{{id}}"><span class="octicon octicon-check"></span></button>
 </div>
