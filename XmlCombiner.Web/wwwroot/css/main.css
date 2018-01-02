@@ -25,7 +25,11 @@
 }
 
 .dirty {
-    background:#fff200 !important;
+    background:#fff200 !important; /* Yellowish */
+}
+
+.btn:not(.disabled) {
+    cursor: pointer;
 }
 
 @keyframes spin {
