@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace XmlCombiner.Web.Domain
 {
-    public class FeedGroup
+    public class FeedGroup 
     {
         public string Id { get; set; }
 
@@ -17,6 +19,17 @@ namespace XmlCombiner.Web.Domain
         public FeedGroup()
         {
             Feeds = new HashSet<Feed>();
+        }
+
+        public FeedGroup Copy()
+        {
+            return new FeedGroup
+            {
+                Description = Description,
+                BaseUrl = BaseUrl,
+                Hidden = Hidden,
+                Feeds = Feeds.Select(f => f.Copy()).ToArray(),
+            };
         }
     }
 }

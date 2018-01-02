@@ -1,4 +1,6 @@
-﻿namespace XmlCombiner.Web.Domain
+﻿using System;
+
+namespace XmlCombiner.Web.Domain
 {
     public class AdditionalParameter
     {
@@ -8,6 +10,14 @@
 
         public AdditionalParameter()
         {
+        }
+
+        public AdditionalParameter Copy()
+        {
+            return new AdditionalParameter
+            {
+                Parameter = Parameter,
+            };
         }
     }
 }

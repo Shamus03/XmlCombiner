@@ -1,4 +1,4 @@
-﻿'option strict';
+﻿'use strict';
 
 $(() => onDocumentLoad());
 
@@ -63,12 +63,10 @@ $(function onBtnHideFeedGroupClick() {
     $('body').on('click', '.btnHideFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
 
-        let me = $(e.target);
+        let me = $(e.target).closest('[data-id]');
         let id = me.data("id");
-        let originalText = me.text();
-        me.text('Hiding...').addClass('disabled');
+        me.addClass('disabled');
         try {
-            me.text('Hiding...').addClass('disabled');
             await $.put(`/api/feedgroups/${id}/hide`);
             $(`.btnUnhideFeedGroup[data-id=${id}]`).show();
             $(`.btnHideFeedGroup[data-id=${id}]`).hide();
@@ -77,7 +75,7 @@ $(function onBtnHideFeedGroupClick() {
             alertError(e);
         }
         finally {
-            me.text(originalText).removeClass('disabled');
+            me.removeClass('disabled');
         }
     });
 });
@@ -86,12 +84,10 @@ $(function onBtnUnhideFeedGroupClick() {
     $('body').on('click', '.btnUnhideFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
 
-        let me = $(e.target);
+        let me = $(e.target).closest('[data-id]');
         let id = me.data("id");
-        let originalText = me.text();
-        me.text('Hiding...').addClass('disabled');
+        me.addClass('disabled');
         try {
-            me.text('Unhiding...').addClass('disabled');
             await $.put(`/api/feedgroups/${id}/unhide`);
             $(`.btnUnhideFeedGroup[data-id=${id}]`).hide();
             $(`.btnHideFeedGroup[data-id=${id}]`).show();
@@ -100,7 +96,7 @@ $(function onBtnUnhideFeedGroupClick() {
             alertError(e);
         }
         finally {
-            me.text(originalText).removeClass('disabled');
+            me.removeClass('disabled');
         }
     });
 });
@@ -180,7 +176,7 @@ $(function onBtnSubmitFeedClick() {
 $(function onBtnDeleteFeedClick() {
     $('body').on('click', '.btnDeleteFeed:not(.disabled)', async e => {
         e.preventDefault();
-        let me = $(e.target);
+        let me = $(e.target).closest('[data-id]');
         let row = me.closest('.trFeed');
         let name = row.find('.btnFeedLink').text();
 
@@ -189,7 +185,7 @@ $(function onBtnDeleteFeedClick() {
         }
 
         let id = me.data("id");
-        me.text('Deleting...').addClass('disabled');
+        me.addClass('disabled');
         try {
             await $.delete(`/api/feeds/${id}`);
             row.remove();
@@ -203,7 +199,7 @@ $(function onBtnDeleteFeedClick() {
 $(function onBtnDeleteFeedGroupClick() {
     $('body').on('click', '.btnDeleteFeedGroup:not(.disabled)', async e => {
         e.preventDefault();
-        let me = $(e.target);
+        let me = $(e.target).closest('[data-id]');
         let row = me.closest('.trFeedGroup');
         let name = row.find('.btnFeedGroupLink').text();
 
@@ -212,7 +208,7 @@ $(function onBtnDeleteFeedGroupClick() {
         }
 
         let id = me.data("id");
-        me.text('Deleting...').addClass('disabled');
+        me.addClass('disabled');
         try {
             await $.delete(`/api/feedgroups/${id}`);
             row.remove();
@@ -223,6 +219,58 @@ $(function onBtnDeleteFeedGroupClick() {
     });
 });
 
+$(function onBtnCopyFeedGroupClick() {
+    $('body').on('click', '.btnCopyFeedGroup:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target).closest('[data-id]');
+        let id = me.data("id");
+        me.addClass('disabled');
+        try {
+            let copy = await $.post(`/api/feedgroups/${id}/copy`);
+
+            let copyRow = Handlebars.partials['feedGroupRow'](copy);
+            $(copyRow).insertBefore($('.trNewFeedGroup'));
+        }
+        catch (e) {
+            alertError(e);
+        }
+        finally {
+            me.removeClass('disabled');
+        }
+    });
+});
+
+$(function onBtnRenameFeedGroupClick() {
+    $('body').on('click', '.btnRenameFeedGroup:not(.disabled)', async e => {
+        e.preventDefault();
+        let me = $(e.target).closest('[data-id]');
+        let id = me.data("id");
+
+        let feedGroupLink = $(`.btnFeedGroupLink[data-id=${id}]`);
+
+        let originalDescription = feedGroupLink.text();
+
+        let newDescription = prompt('Enter the new description for this feed:', originalDescription);
+
+        if (newDescription == null || newDescription == "") {
+            return;
+        }
+
+        me.addClass('disabled');
+
+        try {
+            await $.put(`/api/feedgroups/${id}/description`, { description: newDescription });
+
+            feedGroupLink.text(newDescription);
+        }
+        catch (e) {
+            alertError(e);
+        }
+        finally {
+            me.removeClass('disabled');
+        }
+    });
+});
 // HELPERS
 
 async function registerPartials() {

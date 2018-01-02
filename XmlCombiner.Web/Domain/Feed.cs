@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
@@ -21,6 +22,16 @@ namespace XmlCombiner.Web.Domain
         public Feed()
         {
             AdditionalParameters = new HashSet<AdditionalParameter>();
+        }
+
+        public Feed Copy()
+        {
+            return new Feed
+            {
+                BaseUrl = BaseUrl,
+                Name = Name,
+                AdditionalParameters = AdditionalParameters.Select(a => a.Copy()).ToArray(),
+            };
         }
     }
 }

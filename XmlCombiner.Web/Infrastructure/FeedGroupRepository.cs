@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using XmlCombiner.Web.Domain;
@@ -35,19 +36,9 @@ namespace XmlCombiner.Web.Infrastructure
                 .ToArrayAsync();
         }
 
-        public async Task<bool> DeleteFeedGroupAsync(string id)
+        public Task<bool> DeleteFeedGroupAsync(string id)
         {
-            var feedGroup = await Context.FeedGroups
-                .FindAsync(id);
-
-            if (feedGroup is null)
-            {
-                return false;
-            }
-
-            Context.FeedGroups.Remove(feedGroup);
-            await Context.SaveChangesAsync();
-            return true;
+            return ActionOnFeedGroupAsync(id, fg => Context.FeedGroups.Remove(fg));
         }
 
         public async Task<FeedGroup> GetFeedGroupAsync(string id)
@@ -78,6 +69,27 @@ namespace XmlCombiner.Web.Infrastructure
         {
             Context.FeedGroups.Add(feedGroup);
             await Context.SaveChangesAsync();
+        }
+
+        public Task<bool> UpdateFeedGroupDescriptionAsync(string id, string description)
+        {
+            return ActionOnFeedGroupAsync(id, fg => fg.Description = description);
+        }
+
+        private async Task<bool> ActionOnFeedGroupAsync(string id, Action<FeedGroup> action)
+        {
+            var feedGroup = await Context.FeedGroups
+               .FindAsync(id);
+
+            if (feedGroup is null)
+            {
+                return false;
+            }
+
+            action(feedGroup);
+
+            await Context.SaveChangesAsync();
+            return true;
         }
     }
 }

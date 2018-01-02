@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Linq;
@@ -116,19 +117,6 @@ namespace XmlCombiner.Web.Controllers
                 ).ToList()
             };
 
-            try
-            {
-                XDocument.Load(feed.RssPageUrl);
-            }
-            catch (Exception e) when (e is IOException || e is WebException)
-            {
-                return BadRequest("Feed could not be loaded");
-            }
-            catch (XmlException)
-            {
-                return BadRequest("Feed url does not parse to XML");
-            }
-
             if (await FeedGroupRepository.AddFeedToGroupAsync(feedGroupId, feed))
             {
                 return Created($"api/feeds/{feed.Id}", feed);
@@ -137,6 +125,47 @@ namespace XmlCombiner.Web.Controllers
             {
                 return NotFound();
             }
+        }
+
+        [HttpPut("{feedGroupId}/description")]
+        public async Task<IActionResult> UpdateFeedGroupDescription([FromRoute] string feedGroupId, [FromBody] JObject body)
+        {
+            if (!body.TryGetValue("description", out JToken description) || description.Type != JTokenType.String)
+            {
+                ModelState.AddModelError("description", "description (string) is required");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (!await FeedGroupRepository.UpdateFeedGroupDescriptionAsync(feedGroupId, description.Value<string>()))
+            {
+                return NotFound();
+            };
+
+            return Ok();
+        }
+
+        [HttpPost("{feedGroupId}/copy")]
+        [Produces(typeof(FeedGroup))]
+        public async Task<IActionResult> CopyFeedGroup([FromRoute] string feedGroupId)
+        {
+            var original = await FeedGroupRepository.GetFeedGroupAsync(feedGroupId);
+
+            if (original == null)
+            {
+                return NotFound();
+            }
+
+            var copy = original.Copy();
+
+            copy.Description += " (copy)";
+
+            await FeedGroupRepository.AddFeedGroupAsync(copy);
+
+            return CreatedAtAction(nameof(GetFeedGroup), new { id = copy.Id }, copy);
         }
     }
 }
