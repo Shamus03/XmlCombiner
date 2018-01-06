@@ -1,397 +1,253 @@
 ﻿'use strict';
 
-$(() => onDocumentLoad());
-
-async function onDocumentLoad() {
-    await registerPartials();
-
-    directAppContent();
-}
-
-async function directAppContent() {
-    try {
-        switch (getWindowHash()) {
-            case '':
-            case '#feedgroups':
-                await loadFeedGroupsPageAsync();
-                break;
-            case '#feedgroup':
-                let id = getHashQueryParameter('id');
-                await loadFeedGroupPageAsync(id);
-                break;
-            default:
-                throw new Error("Invalid page hash");
-        }
-    }
-    catch (e) {
-        alertError(e);
-    }
-}
-
-// PAGE LOADING
-
-async function loadFeedGroupPageAsync(id) {
-    showLoader();
-    setActiveNav('#navFeedGroup');
-    $('#hTitle').text('Feed Group: ');
-    let template = Handlebars.partials['feedsTable'];
-    let data = await $.getJSON(`/api/feedgroups/${id}`);
-    let html = template(data);
-    $('#divPartialContent').html(html);
-    $('#hTitle').text(`Feed Group: ${data.description}`);
-}
-
-async function loadFeedGroupsPageAsync() {
-    showLoader();
-    setActiveNav('#navFeedGroups');
-    $('#hTitle').text('Feed Groups');
-    let template = Handlebars.partials['feedGroupsTable'];
-    let data = await $.getJSON('/api/feedgroups');
-    let html = template(data);
-    $('#divPartialContent').html(html);
-}
-
-// NAVIGATION AND EVENTS
-
-$(function windowOnHashChange() {
-    window.onhashchange = e => {
-        setTimeout(directAppContent, 50);
-    };
-});
-
-$(function onBtnHideFeedGroupClick() {
-    $('body').on('click', '.btnHideFeedGroup:not(.disabled)', async e => {
-        e.preventDefault();
-
-        let me = $(e.target).closest('[data-id]');
-        let id = me.data("id");
-        me.addClass('disabled');
-        try {
-            await $.put(`/api/feedgroups/${id}/hide`);
-            $(`.btnUnhideFeedGroup[data-id=${id}]`).show();
-            $(`.btnHideFeedGroup[data-id=${id}]`).hide();
-        }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
-
-$(function onBtnUnhideFeedGroupClick() {
-    $('body').on('click', '.btnUnhideFeedGroup:not(.disabled)', async e => {
-        e.preventDefault();
-
-        let me = $(e.target).closest('[data-id]');
-        let id = me.data("id");
-        me.addClass('disabled');
-        try {
-            await $.put(`/api/feedgroups/${id}/unhide`);
-            $(`.btnUnhideFeedGroup[data-id=${id}]`).hide();
-            $(`.btnHideFeedGroup[data-id=${id}]`).show();
-        }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
-
-$(function onBtnSubmitNewFeedGroupClick() {
-    let handler = e => {
-        if (e.keyCode === 13) {
-            $('.btnSubmitNewFeedGroup').click();
-        }
-    };
-    $('body').on('keyup', '.inputNewFeedGroupDescription', handler);
-    $('body').on('keyup', '.inputNewFeedGroupBaseUrl', handler);
-
-    $('body').on('click', '.btnSubmitNewFeedGroup', async e => {
-        e.preventDefault();
-        let me = $(e.target);
-        let data = {
-            description: $('.inputNewFeedGroupDescription').val(),
-            baseUrl: $('.inputNewFeedGroupBaseUrl').val()
+const FeedGroupRowVue = {
+    props: ['feedGroup'],
+    template: '#feedGroupRowTemplate',
+    data() {
+        return {
+            loading: false
         };
-        
-        me.addClass('disabled');
-        try {
-            let newFeedGroup = await $.post('/api/feedgroups', data);
-
-            let newRow = Handlebars.partials['feedGroupRow'](newFeedGroup);
-            $(newRow).insertBefore($('.trNewFeedGroup'));
+    },
+    created() {
+        this.doWithLoading = async (action) => {
+            this.loading = true;
+            try {
+                await action();
+            }
+            finally {
+                this.loading = false;
+            }
         }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
+    },
+    methods: {
+        confirmDeleteSelf() {
+            if (confirm(`Delete feed group "${this.feedGroup.description}"?`))
+            {
+                this.deleteSelf();
+            }
+        },
+        deleteSelf() {
+            this.doWithLoading(async () => {
+                await axios.delete(`/api/feedgroups/${this.feedGroup.id}`);
+                this.$emit('removeFeedGroup', { id: this.feedGroup.id });
+            });
+        },
+        hideSelf() {
+            this.doWithLoading(async () => {
+                await axios.put(`/api/feedgroups/${this.feedGroup.id}/hide`);
+                this.feedGroup.hidden = true;
+            });
+        },
+        unhideSelf() {
+            this.doWithLoading(async () => {
+                await axios.put(`/api/feedgroups/${this.feedGroup.id}/unhide`);
+                this.feedGroup.hidden = false;
+            });
+        },
+        copySelf() {
+            this.doWithLoading(async () => {
+                let resp = await axios.post(`/api/feedgroups/${this.feedGroup.id}/copy`);
+                let copy = resp.data;
+                this.$emit('createFeedGroup', { newFeedGroup: copy });
+            });
+        },
+        renameSelf() {
+            this.doWithLoading(async () => {
+                let newDescription = prompt('Enter the new description for this feed group:', this.feedGroup.description);
 
-$(function onBtnSubmitFeedClick() {
-    let keyUpHandler = e => {
-        if (e.keyCode === 13) {
-            $('.btnSubmitFeed').click();
+                if (!newDescription) {
+                    return;
+                }
+
+                await axios.patch(`/api/feedgroups/${this.feedGroup.id}`, { description: newDescription });
+                this.feedGroup.description = newDescription;
+            });
         }
-    };
-    $('body').on('keyup', '.inputNewFeedName', keyUpHandler);
-    $('body').on('keyup', '.inputNewFeedAdditional', keyUpHandler);
+    }
+}
 
-    $('body').on('click', '.btnSubmitFeed:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target);
-
-        let data = {
-            name: $('.inputNewFeedName').val(),
-            baseUrl: $('.inputNewFeedBaseUrl').val(),
-            additionalParameters: $('.inputNewFeedAdditional').val().trim().split(/\s+/).filter(p => p).map(p => { return { parameter: p }; })
+const FeedGroupsVue = {
+    template: '#feedGroupsTemplate',
+    data() {
+        return {
+            loading: false,
+            creating: false,
+            feedGroups: null,
+            error: null,
+            newFeedGroupDescription: '',
+            newFeedGroupBaseUrl: ''
         };
-        
-        me.addClass('disabled');
-        try {
-            let id = getHashQueryParameter('id');
-            let newFeed = await $.post(`/api/feedgroups/${id}/feeds`, data);
+    },
+    components: {
+        'feed-group-row': FeedGroupRowVue
+    },
+    created() {
+        this.fetchData();
+    },
+    methods: {
+        async fetchData() {
+            this.error = this.feedGroups = null;
+            this.loading = true;
 
-            let newRow = Handlebars.partials['feedRow'](newFeed);
-            $(newRow).insertBefore($('.trNewFeed'));
+            try {
+                let resp = await axios.get('/api/feedgroups');
+                this.feedGroups = resp.data;
+            }
+            catch (e) {
+                this.error = JSON.stringify(e);
+            }
+            finally {
+                this.loading = false;
+            }
+        },
+        async removeFeedGroup(id) {
+            this.feedGroups = this.feedGroups.filter(f => f.id !== id);
+        },
+        async createFeedGroup(newFeedGroup) {
+            this.creating = true;
+
+            try {
+                if (!newFeedGroup) {
+                    let resp = await axios.post('/api/feedgroups', {
+                        description: this.newFeedGroupDescription,
+                        baseUrl: this.newFeedGroupBaseUrl
+                    });
+                    newFeedGroup = resp.data;
+                }
+
+                this.feedGroups.push(newFeedGroup);
+            }
+            catch (e) {
+                if (e.status === 400) {
+                    let errs = [];
+                    for (let k in e.responseJSON) {
+                        errs.push(e.responseJSON[k][0]);
+                    }
+
+                    this.error = errs.join(" ");
+                }
+                else {
+                    this.error = JSON.stringify(e);
+                }
+            }
+            finally {
+                this.creating = false;
+            }
         }
-        catch (e) {
-            alertError(e);
+    }
+};
+
+const FeedRowVue = {
+    props: ['feed'],
+    template: '#feedRowTemplate',
+    data() {
+        return {
+            deleting: false
         }
-        finally {
-            me.removeClass('disabled');
+    },
+    methods: {
+        confirmDeleteSelf() {
+            if (confirm(`Delete feed "${this.feed.name}"?`)) {
+                this.deleteSelf();
+            }
+        },
+        async deleteSelf() {
+            this.deleting = true;
+
+            try {
+                await axios.delete(`api/feeds/${this.feed.id}`);
+                this.$emit('deleteFeed', { id: this.feed.id });
+            }
+            finally {
+                this.deleting = false;
+            }
         }
-    });
-});
-
-$(function onBtnDeleteFeedClick() {
-    $('body').on('click', '.btnDeleteFeed:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target).closest('[data-id]');
-        let row = me.closest('.trFeed');
-        let name = row.find('.btnFeedLink').text();
-
-        if (!confirm(`Delete "${name}"?`)) {
-            return;
-        }
-
-        let id = me.data("id");
-        me.addClass('disabled');
-        try {
-            await $.delete(`/api/feeds/${id}`);
-            row.remove();
-        }
-        catch (e) {
-            alertError(e);
-        }
-    });
-});
-
-$(function onBtnDeleteFeedGroupClick() {
-    $('body').on('click', '.btnDeleteFeedGroup:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target).closest('[data-id]');
-        let row = me.closest('.trFeedGroup');
-        let name = row.find('.btnFeedGroupLink').text();
-
-        if (!confirm(`Delete "${name}"?`)) {
-            return;
-        }
-
-        let id = me.data("id");
-        me.addClass('disabled');
-        try {
-            await $.delete(`/api/feedgroups/${id}`);
-            row.remove();
-        }
-        catch (e) {
-            alertError(e);
-        }
-    });
-});
-
-$(function onBtnCopyFeedGroupClick() {
-    $('body').on('click', '.btnCopyFeedGroup:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target).closest('[data-id]');
-        let id = me.data("id");
-        me.addClass('disabled');
-        try {
-            let copy = await $.post(`/api/feedgroups/${id}/copy`);
-
-            let copyRow = Handlebars.partials['feedGroupRow'](copy);
-            $(copyRow).insertBefore($('.trNewFeedGroup'));
-        }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
-
-$(function onBtnRenameFeedGroupClick() {
-    $('body').on('click', '.btnRenameFeedGroup:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target).closest('[data-id]');
-        let id = me.data("id");
-
-        let feedGroupLink = $(`.btnFeedGroupLink[data-id=${id}]`);
-
-        let originalDescription = feedGroupLink.text();
-
-        let newDescription = prompt('Enter the new description for this feed:', originalDescription);
-
-        if (newDescription === null || newDescription === "") {
-            return;
-        }
-
-        me.addClass('disabled');
-
-        try {
-            await $.patch(`/api/feedgroups/${id}`, { description: newDescription });
-
-            feedGroupLink.text(newDescription);
-        }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
-
-$(function onBtnNewFeedBaseUrlSubmitClick() {
-    let keyUpHandler = e => {
-        let input = $('.inputNewFeedBaseUrl');
-
-        let originalVal = input.attr('value');
-        let newVal = input.val();
-
-        if (originalVal !== newVal) {
-            input.addClass('dirty');
-        }
-        else {
-            input.removeClass('dirty');
-        }
-
-        if (e.keyCode === 13) {
-            $('.btnNewFeedBaseUrlSubmit').click();
-        }
-    };
-    $('body').on('keyup', '.inputNewFeedBaseUrl', keyUpHandler);
-
-    $('body').on('click', '.btnNewFeedBaseUrlSubmit:not(.disabled)', async e => {
-        e.preventDefault();
-        let me = $(e.target).closest('[data-id]');
-        let id = me.data("id");
-
-        let input = $('.inputNewFeedBaseUrl');
-
-        let newUrl = input.val();
-
-        me.addClass('disabled');
-        try {
-            await $.patch(`/api/feedgroups/${id}`, { baseUrl: newUrl });
-            input.removeClass('dirty');
-            input.attr('value', newUrl);
-        }
-        catch (e) {
-            alertError(e);
-        }
-        finally {
-            me.removeClass('disabled');
-        }
-    });
-});
-
-// HELPERS
-
-async function registerPartials() {
-    await $.when(
-        registerPartial('feedGroupsTable'),
-        registerPartial('feedGroupRow'),
-        registerPartial('feedsTable'),
-        registerPartial('feedRow')
-    );
-
-    async function registerPartial(partialName) {
-        let partial = await $.get(`/templates/${partialName}.htm`);
-        Handlebars.registerPartial(partialName, Handlebars.compile(partial));
     }
 }
 
-function showLoader() {
-    $('#divPartialContent').html('<div class="loader centered"></div>');
-}
+const FeedGroupVue = {
+    props: ['id'],
+    template: '#feedGroupTemplate',
+    data() {
+        return {
+            feedGroup: {},
+            loaded: false,
+            loading: false,
+            updatingBaseUrl: false,
+            lastBaseUrl: null,
+            error: null,
+            newFeedName: '',
+            newFeedAdditionalParameters: '',
+        };
+    },
+    components: {
+        'feed-row': FeedRowVue
+    },
+    created() {
+        this.fetchData();
+    },
+    computed: {
+        dirty() {
+            return this.lastBaseUrl && this.lastBaseUrl != this.feedGroup.baseUrl;
+        }
+    },
+    methods: {
+        async fetchData() {
+            this.loading = true;
 
-function setActiveNav(selector) {
-    $('.nav-link').removeClass('active');
-    $(selector).addClass('active');
-}
+            try {
+                let resp = await axios.get(`/api/feedgroups/${this.id}`);
+                this.feedGroup = resp.data;
+                this.lastBaseUrl = this.feedGroup.baseUrl;
+                this.loaded = true;
+            }
+            catch (e) {
+                this.error = e.toString();
+            }
+            finally {
+                this.loading = false;
+            }
+        },
+        async submitNewFeed() {
+            try {
+                let resp = await axios.post(`/api/feedgroups/${this.id}/feeds`, {
+                    name: this.newFeedName,
+                    baseUrl: this.feedGroup.baseUrl,
+                    additionalParameters: this.newFeedAdditionalParameters.trim().split(/\s+/).filter(p => p).map(p => { return { parameter: p }; })
+                });
+                let newFeed = resp.data;
 
-function alertError(e) {
-    if (e.responseJSON) {
-        alert(JSON.stringify(e.responseJSON, null, ' '));
+                this.feedGroup.feeds.push(newFeed);
+            }
+            catch (e) {
+                this.error = e.toString();
+            }
+        },
+        async deleteFeed(id) {
+            this.feedGroup.feeds = this.feedGroup.feeds.filter(f => f.id !== id);
+        },
+        async updateBaseUrl() {
+            this.updatingBaseUrl = true;
+
+            try {
+                await axios.patch(`/api/feedgroups/${this.id}`, { baseUrl: this.feedGroup.baseUrl });
+                this.lastBaseUrl = this.feedGroup.baseUrl;
+            } finally {
+                this.updatingBaseUrl = false;
+            }
+        }
     }
-    else if (e.responseText) {
-        alert(e.responseText);
-    }
-    else {
-        alert(e);
-    }
-}
+};
 
-function getWindowHash() {
-    return window.location.hash.split('?')[0];
-}
+const routes = [
+    { path: '/feedgroups', component: FeedGroupsVue },
+    { path: '/feedgroup/:id', component: FeedGroupVue, props: true }
+];
 
-function getHashQueryParameter(key) {
-    return window.location.hash.split('?')[1].split('&')
-        .map(kvp => kvp.split('='))
-        .filter(kvp => kvp[0] === key)[0][1];
-}
-
-$(() => {
-    $.post = function (url, data) {
-        return $.ajax({
-            method: "POST",
-            contentType: "application/json",
-            url: url,
-            data: JSON.stringify(data)
-        });
-    };
-
-    $.put = function (url, data) {
-        return $.ajax({
-            method: "PUT",
-            contentType: "application/json",
-            url: url,
-            data: JSON.stringify(data)
-        });
-    };
-
-    $.patch = function (url, data) {
-        return $.ajax({
-            method: "PATCH",
-            contentType: "application/json",
-            url: url,
-            data: JSON.stringify(data)
-        });
-    };
-
-    $.delete = function (url) {
-        return $.ajax({
-            method: "DELETE",
-            url: url
-        });
-    };
+const router = new VueRouter({
+    routes
 });
+
+const app = new Vue({
+    router
+}).$mount('#app');

@@ -7,25 +7,195 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/4.4.0/font/octicons.min.css" integrity="sha256-pNGG0948CVwfHxxS8lVkUKftaSsMBzFSUknrKr2utfY=" crossorigin="anonymous" />
     <link href="css/main.css" rel="stylesheet" />
+
+    <script type="text/x-template" id="feedGroupsTemplate">
+        <div>
+            <h3>Feed Groups</h3>
+            <div v-if="loading" class="loader"></div>
+            <div v-if="error" class="error">{{error}}</div>
+            <table class="table table-bordered table-sm" v-if="feedGroups">
+                <thead class="thead-default">
+                    <tr>
+                        <th>Group</th>
+                        <th>Base Url</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <feed-group-row :feedGroup=feedGroup
+                                    v-for="feedGroup in feedGroups"
+                                    :key="feedGroup.id"
+                                    v-on:createFeedGroup="createFeedGroup($event.newFeedGroup)"
+                                    v-on:removeFeedGroup="removeFeedGroup($event.id)" />
+                    <tr>
+                        <td>
+                            <input v-model="newFeedGroupDescription"
+                                   class="form-control"
+                                   placeholder="Description" />
+                        </td>
+                        <td>
+                            <input v-model="newFeedGroupBaseUrl"
+                                   class="form-control"
+                                   placeholder="Base Url" />
+                        </td>
+                        <td>
+                            <button v-bind:disabled="creating"
+                                    v-on:click="createFeedGroup()"
+                                    class="btn btn-success">
+                                <span class="octicon octicon-check"></span>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </script>
+
+    <script type="text/x-template" id="feedGroupRowTemplate">
+        <tr>
+            <td>
+                <router-link v-bind:to="`/feedgroup/${feedGroup.id}`"
+                             style="user-select:text"
+                             class="btn btn-primary">
+                    {{ feedGroup.description }}
+                </router-link>
+            </td>
+            <td>{{ feedGroup.baseUrl }}</td>
+            <td>
+                <button v-if="feedGroup.hidden"
+                        v-bind:disabled="loading"
+                        class="btn btn-warning"
+                        v-on:click="unhideSelf()">
+                    <span class="octicon octicon-unmute"></span>
+                </button>
+                <button v-else
+                        v-bind:disabled="loading"
+                        class="btn btn-outline-warning"
+                        v-on:click="hideSelf()">
+                    <span class="octicon octicon-mute"></span>
+                </button>
+                <button v-bind:disabled="loading"
+                        class="btn btn-danger"
+                        v-on:click="confirmDeleteSelf()">
+                    <span class="octicon octicon-trashcan"></span>
+                </button>
+                <button v-bind:disabled="loading"
+                        class="btn btn-outline-dark"
+                        v-on:click="copySelf()">
+                    <span class="octicon octicon-repo-clone"></span>
+                </button>
+                <button v-bind:disabled="loading"
+                        class="btn btn-outline-dark"
+                        v-on:click="renameSelf()">
+                    <span class="octicon octicon-pencil"></span>
+                </button>
+            </td>
+        </tr>
+    </script>
+
+    <script type="text/x-template" id="feedGroupTemplate">
+        <div>
+            <h3>Feed Group: {{feedGroup.description}}</h3>
+            <div v-if="loading" class="loader"></div>
+            <div v-if="error" class="error">{{error}}</div>
+            <template v-if="loaded">
+                <table class="table table-bordered table-sm">
+                    <thead class="thead-default">
+                        <tr>
+                            <th>Feed Name</th>
+                            <th>Additional Queries</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <feed-row :feed="feed"
+                                  v-for="feed in feedGroup.feeds"
+                                  :key="feed.id"
+                                  v-on:deleteFeed="deleteFeed($event.id)" />
+                        <tr>
+                            <td>
+                                <input v-model="newFeedName"
+                                       class="form-control"
+                                       placeholder="Feed Name" />
+                            </td>
+                            <td>
+                                <input v-model="newFeedAdditionalParameters" class="form-control"
+                                       placeholder="Additional Queries" />
+                            </td>
+                            <td>
+                                <button class="btn btn-success"
+                                        v-on:click="submitNewFeed()">
+                                    <span class="octicon octicon-check"></span>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="input-group">
+                    <span class="input-group-addon">Base Url</span>
+                    <input class="form-control"
+                           v-bind:class="{dirty: dirty}"
+                           type="text"
+                           v-model="feedGroup.baseUrl"
+                           placeholder="Base Url" />
+                    <button class="btn btn-success"
+                            v-on:click="updateBaseUrl()"
+                            v-on:update="dirty = true"
+                            v-bind:disabled="updatingBaseUrl">
+                        <span class="octicon octicon-check"></span>
+                    </button>
+                </div>
+            </template>
+        </div>
+    </script>
+
+    <script type="text/x-template" id="feedRowTemplate">
+        <tr>
+            <td class="tdFeedName">
+                <a class="btn btn-primary"
+                   style="user-select:text"
+                   :href="feed.searchPageUrl">{{feed.name}}</a>
+            </td>
+            <td class="tdAdditional">
+                <span class="input-group">
+                    <span class="input-group-addon"
+                          v-for="param in feed.additionalParameters">
+                        {{param.parameter}}
+                    </span>
+                </span>
+            </td>
+            <td class="tdActions">
+                <button class="btn btn-danger"
+                        v-on:click="confirmDeleteSelf()"
+                        v-bind:disabled="deleting">
+                    <span class="octicon octicon-trashcan"></span>
+                </button>
+            </td>
+        </tr>
+    </script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#">RSS Feeds</a>
-        <div class="navbar-nav mr-auto">
-            <a id="navFeedGroups" class="nav-item nav-link" href="#feedgroups">Feed Groups</a>
-            <a id="navXml" class="nav-item nav-link" href="api/feeds/xml">Xml</a>
+    <div id="app">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">RSS Feeds</a>
+            <div class="navbar-nav mr-auto">
+                <router-link to="/feedgroups" class="nav-item nav-link">Feed Groups</router-link>
+                <a class="nav-item nav-link" href="api/feeds/xml">Xml</a>
+            </div>
+            <div class="navbar-nav">
+                <a class="nav-item nav-link" style="float:right;" href="swagger">API</a>
+            </div>
+        </nav>
+
+        <div id="divContent" class="container">
+            <router-view></router-view>
         </div>
-        <div class="navbar-nav">
-            <a class="nav-item nav-link" style="float:right;" href="swagger">API</a>
-        </div>
-    </nav>
-    <div id="divContent" class="container">
-        <h3 id="hTitle"></h3>
-        <div id="divPartialContent" class="row"></div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.10/handlebars.min.js"></script>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
