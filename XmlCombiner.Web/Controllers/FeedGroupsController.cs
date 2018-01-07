@@ -128,7 +128,7 @@ namespace XmlCombiner.Web.Controllers
         }
 
         [HttpPatch("{feedGroupId}")]
-        public async Task<IActionResult> UpdateFeedGroupDescription([FromRoute] string feedGroupId, [FromBody] JObject body)
+        public async Task<IActionResult> UpdateFeedGroup([FromRoute] string feedGroupId, [FromBody] JObject body)
         {
             string updatedDescription = null;
             string updatedBaseUrl = null;
@@ -197,6 +197,7 @@ namespace XmlCombiner.Web.Controllers
             var copy = original.Copy();
 
             copy.Description += " (copy)";
+            copy.Hidden = true;
 
             await FeedGroupRepository.AddFeedGroupAsync(copy);
 
