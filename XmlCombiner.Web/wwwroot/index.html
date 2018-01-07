@@ -64,15 +64,15 @@
             <td>
                 <button v-if="feedGroup.hidden"
                         v-bind:disabled="loading"
-                        class="btn btn-warning"
+                        class="btn btn-outline-warning"
                         v-on:click="unhideSelf()">
-                    <span class="octicon octicon-unmute"></span>
+                    <span class="octicon octicon-mute"></span>
                 </button>
                 <button v-else
                         v-bind:disabled="loading"
-                        class="btn btn-outline-warning"
+                        class="btn btn-warning"
                         v-on:click="hideSelf()">
-                    <span class="octicon octicon-mute"></span>
+                    <span class="octicon octicon-unmute"></span>
                 </button>
                 <button v-bind:disabled="loading"
                         class="btn btn-danger"

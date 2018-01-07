@@ -45,6 +45,7 @@ namespace XmlCombiner.Web
         {
             if (env.IsDevelopment())
             {
+                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
             }
 
