@@ -23,7 +23,7 @@
                 </thead>
                 <tbody>
                     <feed-group-row :feedGroup=feedGroup
-                                    v-for="feedGroup in feedGroups"
+                                    v-for="feedGroup in feedGroupsSortedByDescription"
                                     :key="feedGroup.id"
                                     v-on:createFeedGroup="createFeedGroup($event.newFeedGroup)"
                                     v-on:removeFeedGroup="removeFeedGroup($event.id)" />
@@ -109,7 +109,7 @@
                     </thead>
                     <tbody>
                         <feed-row :feed="feed"
-                                  v-for="feed in feedGroup.feeds"
+                                  v-for="feed in feedsSortedByName"
                                   :key="feed.id"
                                   v-on:deleteFeed="deleteFeed($event.id)" />
                         <tr>

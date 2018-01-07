@@ -21,8 +21,7 @@ const FeedGroupRowVue = {
     },
     methods: {
         confirmDeleteSelf() {
-            if (confirm(`Delete feed group "${this.feedGroup.description}"?`))
-            {
+            if (confirm(`Delete feed group "${this.feedGroup.description}"?`)) {
                 this.deleteSelf();
             }
         },
@@ -83,6 +82,11 @@ const FeedGroupsVue = {
     },
     created() {
         this.fetchData();
+    },
+    computed: {
+        feedGroupsSortedByDescription() {
+            return this.feedGroups.slice().sort((a, b) => a.description.localeCompare(b.description));
+        }
     },
     methods: {
         async fetchData() {
@@ -189,6 +193,9 @@ const FeedGroupVue = {
     computed: {
         dirty() {
             return this.lastBaseUrl && this.lastBaseUrl != this.feedGroup.baseUrl;
+        },
+        feedsSortedByName() {
+            return this.feedGroup.feeds.slice().sort((a, b) => a.name.localeCompare(b.name));
         }
     },
     methods: {
