@@ -1,5 +1,9 @@
 ﻿'use strict';
 
+function sliceSortStringProperty(original, selector) {
+    return original.slice().sort((a, b) => selector(a).localeCompare(selector(b)));
+}
+
 const FeedGroupRowVue = {
     props: ['feedGroup'],
     template: '#feedGroupRowTemplate',
@@ -85,7 +89,7 @@ const FeedGroupsVue = {
     },
     computed: {
         feedGroupsSortedByDescription() {
-            return this.feedGroups.slice().sort((a, b) => a.description.localeCompare(b.description));
+            return sliceSortStringProperty(this.feedGroups, f => f.description);
         }
     },
     methods: {
@@ -149,6 +153,11 @@ const FeedRowVue = {
             deleting: false
         }
     },
+    computed: {
+        sortedAdditionalParameters() {
+            return sliceSortStringProperty(this.feed.additionalParameters, p => p.parameter);
+        }
+    },
     methods: {
         confirmDeleteSelf() {
             if (confirm(`Delete feed "${this.feed.name}"?`)) {
@@ -195,7 +204,7 @@ const FeedGroupVue = {
             return this.lastBaseUrl && this.lastBaseUrl != this.feedGroup.baseUrl;
         },
         feedsSortedByName() {
-            return this.feedGroup.feeds.slice().sort((a, b) => a.name.localeCompare(b.name));
+            return sliceSortStringProperty(this.feedGroup.feeds, f => f.name);
         }
     },
     methods: {
